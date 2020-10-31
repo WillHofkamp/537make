@@ -45,7 +45,7 @@ int buildSpecification(char **commands, int commandNum, int bufferSize) {
 			exit(-1);
 		}else if(processId == 0){
 			// overwrite the parent process with the new commands
-			numStringsInLine = commandLineSplit(commands[i], bufferSize, splitCommands);
+			numStringsInLine = commandLineSplit(commands[i], splitCommands, bufferSize);
 			if(numStringsInLine){
 				execErrorFlag = execvp(splitCommands[0], splitCommands);
 				// if child process fails, stop the build
@@ -87,7 +87,7 @@ int commandLineSplit(char* currentCommand, char** currentCommandsParsed, int buf
 		// if current char is a space than we reached the end of current string
 		if(c == ' '){
 			currString[currStringIndex] = '\0';
-			*(commandsParsed+index) = currString;
+			*(currentCommandsParsed+index) = currString;
 			numOfStrings++;
 			index++;
 			currStringIndex = 0;
@@ -102,12 +102,12 @@ int commandLineSplit(char* currentCommand, char** currentCommandsParsed, int buf
 	// if the command isn't empty than add it to the array
 	if(currStringIndex > 0){
 		currString[currStringIndex] = '\0';
-		*(commandsParsed+index) = currString;
+		*(currentCommandsParsed+index) = currString;
 		numOfStrings++;
 		index++;
 	}
 	
-	*(commandsParsed+index) = NULL;
+	*(currentCommandsParsed+index) = NULL;
 	index++;
 
 	return numOfStrings;

@@ -16,7 +16,7 @@
 #include "buildSpecificationGraph.h"
 #include "buildSpecification.h"
 
-const int BUFFER_SIZE = 1024;
+const int BUFFER_SIZE = 4096;
 
 // This method handles all of the functionality of making 
 // a process, with the various calls necessary including
