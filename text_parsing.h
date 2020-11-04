@@ -1,16 +1,13 @@
-/////////////////////////////////////////////////
-//
-// File:	text_parsing.h
-//
-// Author:      Abhi Kosuri
-//              Mike Tuchler
-// All files:   build_spec_graph.c, .h
-//              build_spec_repr.c, .h
-//              proc_creation_prog_exe.c, .h
-//              text_parsing.c, .h
-//              main.c, README
-//
-/////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// Main File: main.c
+// This File: queue.c
+// This File Description: This is the queue implementation which can create, as
+//						  well as enqueue and dequeue to, a queue whose stats 
+//						  can be printed out
+// Author:           William Hofkamp, Pranet Gowni
+// Email:            hofkamp@wisc.edu, gowni@wisc.edu
+// CS Login:         hofkamp, pranet
+////////////////////////////////////////////////////////////////////////////////
 
 #ifndef TEXT_PARSING_H
 #define TEXT_PARSING_H
