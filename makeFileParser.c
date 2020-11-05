@@ -52,13 +52,12 @@ int parseMakeTargets(char* name, FILE* f){
 		printf("Not a valid name");
 		return 0;
 	}	
-	// only initialize lineNum if you're first to do it
 	if (lineNum == 0) {
 		lineNum = 1;
 	}
 
 	while(!feof(f)) {
-		// read in line
+		// read line
 		int result = readFileLine(line, f);
 		if (result == -1) {
 			return 0;
@@ -68,8 +67,7 @@ int parseMakeTargets(char* name, FILE* f){
 			exit(0);
 		}
 
-		// ignore lines that start with \n, \t, or #
-		//read til you encounter a colon character
+		// search for ":" and ignore lines starting with \n, \t, or #
 		if (line[0] != '\0' && line[0] != '\t' && line[0] != '#' && line[0] != ' ') {	
 			token = strtok_r(line, ":", &rest);
 			if (token == NULL){
@@ -87,7 +85,7 @@ int parseMakeTargets(char* name, FILE* f){
 			}
 		}
 		else {
-			//line starts with a \n or \t or #: ignore it
+			//skip line
 		}
 		lineNum++;
 	}		
@@ -105,12 +103,12 @@ void skipWhitespace(char* str) {
 }
 
 //This method parses the dependencies based on the line of the file
-char** parseTargetDependencies(int lineNumba){
+char** parseTargetDependencies(int lineNumber){
 	
 	FILE* file = openMakeFile();
 
-	//throw out lines until you get to lineNum
-	for(int d = 1; d < lineNumba; d++){
+	// get to lineNum
+	for(int d = 1; d < lineNumber; d++){
 		while(fgetc(file) != '\n') {
 			if (feof(file)) {
 				return NULL;
@@ -120,14 +118,14 @@ char** parseTargetDependencies(int lineNumba){
 
 	char* line = calloc(BUFFER, sizeof(char));
 
-	// read into line
+	// read line
 	int result = readFileLine(line, file);
 
 	if (result != 0) {
 		return NULL;
 	}
 	else if (result == -2) {
-		fprintf(stderr, "%i: Error: Line longer than buffer \"%s\"\n", lineNumba, line);
+		fprintf(stderr, "Line longer than buffer\n");
 		exit(0);
 	}
 	
@@ -136,102 +134,91 @@ char** parseTargetDependencies(int lineNumba){
 		return NULL;
 	}
 
-	char** dList = malloc(sizeof(char*)*MAX_NUM_NODES
+	char** parsedStrings = malloc(sizeof(char*)*MAX_NUM_NODES
 );	
 	for (int n = 0; n < MAX_NUM_NODES
 ; n++) {
-		dList[n] = malloc(BUFFER);
+		parsedStrings[n] = malloc(BUFFER);
         }
 
 	// index of line read from Makefile
 	int lineIndex = 0;
-	// index of dependant number in dList (first array index)
+	// index of dependant number in parsedStrings
 	int listIndex = 0;
-	// index of dependant string in dList (second array index)
-	int deppIndex = 0;
+	// index of dependant string in parsedStrings
+	int depIndex = 0;
 
-	// read until the colon to get the first dependancy
+	// read until ":" is found
 	while (lineIndex < BUFFER && line[lineIndex] != ':') {
 		lineIndex++;
 	}
 	lineIndex++;
-	// throw out all subsequent spaces
 	while (lineIndex < BUFFER && line[lineIndex] == ' ') {
 		lineIndex++;
 	}
 
-	// read char by char until you get to a string terminator
-	// the remainder of the line is a series of
-	// 	- chars making up the dependants
-	// 	- followed by some non-zero number of spaces
-	// 	- all ending in a terminator
+	// read line until string terminator is encountered
 	while (lineIndex < BUFFER && lineIndex < (int)strlen(line) && listIndex < MAX_NUM_NODES) {
-		// if you find a non-space, non-terminating char...
 		if (line[lineIndex] != ' ') {
-			// ...set char in dList and increment
-			dList[listIndex][deppIndex] = line[lineIndex];
-			deppIndex++;
-			// ...look at next char
+			parsedStrings[listIndex][depIndex] = line[lineIndex];
+			depIndex++;
 			lineIndex++;
 		}
-		// if you find a space char...
+		// if a space char is found
 		else {
 			// append a null terminator
-			dList[listIndex][deppIndex] = '\0';
-			// ...look at next char and next dependant
+			parsedStrings[listIndex][depIndex] = '\0';
 			listIndex++;
-			deppIndex = 0;
-			// while loop ignores multiple consecutive spaces
+			depIndex = 0;
 			while (lineIndex < BUFFER && line[lineIndex] == ' ') {
 				lineIndex++;
 			}
 		}
 	}
-	// stuff once you've found the \0:
-	if (deppIndex != 0) {
-		dList[listIndex][deppIndex] = '\0';
+	// if "\0:" found
+	if (depIndex != 0) {
+		parsedStrings[listIndex][depIndex] = '\0';
 		listIndex++;
 	}
-	free(dList[listIndex]);
-	dList[listIndex] = NULL;
+	free(parsedStrings[listIndex]);
+	parsedStrings[listIndex] = NULL;
 	
 	lineNum = 0;
     fclose(file);
 	free(line);
-	return dList;
+	return parsedStrings;
 }
 
 //This method parses the command line of the makefile
 //And returns an array of strings or null if the line is over
-char** parseMakeCommandLine(int* lineNumba){
+char** parseMakeCommandLine(int* lineNumber){
 	
 	FILE* file = openMakeFile();
 	char line[BUFFER];
 
-        //read each lineNum and throws out the newline
-        for(int d = 1; d < *lineNumba; d++){
-                while(fgetc(file) != '\n') {
+        //discards the newline char from each line
+        for(int d = 1; d < *lineNumber; d++){
+            while(fgetc(file) != '\n') {
 			if (feof(file)) {
 				return NULL;
 			}
 		}
         }
 
-	// check if viable command line
 	char c = fgetc(file);
 	// quick EOF check
 	if (feof(file)) {
 		return NULL;
 	}
 	if (c != '\t') {
-		// Ignore a line that starts with a newline or #
+		// Skip lines starting with a newline or #
 		if (c == '\n' || c == '#') {
-			(*lineNumba)++;
-			return parseMakeCommandLine(lineNumba);
+			(*lineNumber)++;
+			return parseMakeCommandLine(lineNumber);
 		}
 		else {
 			if(c == ' ') {
-				fprintf(stderr, "%i: Error: should start with a tab character \n", *lineNumba);
+				fprintf(stderr, "Should start with a tab character \n");
 				exit(1);
 			} else {
 				return NULL;
@@ -240,24 +227,23 @@ char** parseMakeCommandLine(int* lineNumba){
 		}
 	}
 
-	// initialize/malloc array and some variables
 	char** array = malloc(sizeof(char*)*CMD_SIZE);
 	for (int n = 0; n < CMD_SIZE; n++) {
 		array[n] = malloc(CMD_SIZE);
 	}
 
-	// read in line
+	// read line
 	int result = readFileLine(line, file);
 	if (result != 0) {
 		return NULL;
 	}
 	else if (result == -2) {
-		fprintf(stderr, "%i: Error: Line longer than buffer \"%s\"\n", *lineNumba, line);
+		fprintf(stderr, "Line longer than buffer\n");
 		exit(0);
 	}
 
 
-	// index of the line from Makefile
+	// index of the Makefile line
 	int lineIndex = 0;
 	// index of the command line argument
 	int listIndex = 0;
@@ -266,25 +252,22 @@ char** parseMakeCommandLine(int* lineNumba){
 
 	// read into the array we return
 	while (line[lineIndex] != '\0' && listIndex < MAX_NUM_NODES) {
-                // if you find a non-space char...
-                if (line[lineIndex] != ' ') {
-                        // ...set char in array and increment
+
+                //if a non-space character found
+				if (line[lineIndex] != ' ') {
                         array[listIndex][arggIndex] = line[lineIndex];
                         arggIndex++;
-                        // ...look at next char
                         lineIndex++;
                 }
-                // if you find a space char...
                 else {
-                        // append a null terminator
+                        // add a null terminator
                         array[listIndex][arggIndex] = '\0';
-                        // ...look at next char and next argument
                         listIndex++;
                         arggIndex = 0;
 			lineIndex++;
                 }
         }
-	// append a null pointer after last arg
+	// add a null pointer after last arg
 	if (arggIndex != 0) {
 		array[listIndex][arggIndex] = '\0';
 		listIndex++;
@@ -323,7 +306,7 @@ int readFileLine(char* buff, FILE* file) {
                 else if (i == BUFFER) {
                         return -2;
                 }
-                // no stop condition, read the character!
+                //read the character
         		if (cont) {
 					if(i > 1 && buff[i-1] == ' ' && c == ' ') {
 					} 
