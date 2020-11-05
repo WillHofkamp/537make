@@ -24,21 +24,17 @@ int showDependencies(GraphNode** graph) {
 		numNodes++;
 	}
 
-	// allows us to add new nodes to the graph
+	// index for the next node to be added at
 	int nextNodeIndex = numNodes;
 
 	// loop through nodes to get dependencies
-	// if successful, graph[i] is parent of graph[k]
 	for (int i = 0; i < numNodes; i++) {
 		if (graph[i] == NULL) {
-			//printf("%i = numNodes\n", numNodes);
 			return 0;
 		}
 		currNode = graph[i];
-		//printf("----TARGET: %s----\n", currNode->name);
 		parsedStrings = parseTargetDependencies(currNode->line);
 
-		// Null handling for parsedStrings
 		if (parsedStrings == NULL) {
 			return 0;
 		}
@@ -48,15 +44,12 @@ int showDependencies(GraphNode** graph) {
 		while (parsedStrings[j] != NULL) {
 			// search for a node with that name
 			nodeCheck = findNode(parsedStrings[j],graph);
-			//printf("%s searched\n", parsedStrings[j]);
-			// if a node is found...
+			// if a node is found
 			if (nodeCheck != NULL) {
-				//printf("\tsearch success\n");
 				// add dependencies
 				addChildToParent(graph[i], nodeCheck);
 			}
-			// otherwise, it's a dependency but not a target
-			// make a node for it, EVEN IF IT'S NOT A FILE
+			//a dependency but not a target
 			else {
 				//create node
 					graph[nextNodeIndex] = createNode(parsedStrings[j], -1);
@@ -67,24 +60,23 @@ int showDependencies(GraphNode** graph) {
 		}
 
 		// free parsedStrings before loop
-		for (int f = 0; f < MAX_NUM_NODES; f++) {
-			// pay respects
-			free(parsedStrings[f]);
-			parsedStrings[f] = NULL;
+		int k = 0;
+		while (k < MAX_NODES)
+		{
+			free(parsedStrings[k]);
+			parsedStrings[k] = NULL;
+			k++;
 		}
 		free(parsedStrings);
-
 	}
-
 	return 0;
 }
 
 //This method creates the order the makefile will be built
 //this is also where the cycle checking in, and uses depth first search
 GraphNode** createFlow(GraphNode* root, GraphNode** graph) {
-	// handle NULL input - default case
 	if (root == NULL) {
-		// root is the first target listed in Makefile
+		// first target in makefile
 		root = graph[0];
 	}
 	//  initialize new buildOrder array
@@ -92,7 +84,7 @@ GraphNode** createFlow(GraphNode* root, GraphNode** graph) {
 	for (int i = 0; i < MAX_NUM_NODES; i++) {
 		order[i] = NULL;
 	}
-	// call searchDepthFirst on EVERY node, w/o write permission
+	// run DFS on each node
 	int j = 0;
 	while (graph[j] != NULL) {
 		searchDepthFirst(graph[j], NULL);
@@ -112,12 +104,10 @@ GraphNode** createFlow(GraphNode* root, GraphNode** graph) {
 	return order;
 }
 
-//This method is the depth first search function which builds the ordered graph
-//and also detects any cycles
-void searchDepthFirst(GraphNode* node, GraphNode** order) {
-	// finds if the node is in a loop
+//Runs DFS to build the ordered graph
+void searchDepthFirst(GraphNode* node, GraphNode** order) {  
 	if (node->repeated == 1) {
-		fprintf(stderr, "%i: Error: loop in dependencies detected\n", node->line);
+		fprintf(stderr, "Loop in dependencies detected\n");
 		exit(0);
 	}
 	if (node->checked == 1) {
@@ -127,26 +117,18 @@ void searchDepthFirst(GraphNode* node, GraphNode** order) {
 	node->repeated = 1;
 
         for (int i = 0; i < node->numchild; i++) {
-		// for each unchecked child
-		// it it's a target
-		// recursive call
+		// if child is a target
 		if (node->children[i]->line > 0) {
 			searchDepthFirst(node->children[i], order);
 		}
         }
-	// once you're here, you havent found a cycle
+	// No cycle found
 	node->repeated = 0;
 
-        // once your done searchDepthFirst'ing through node's children
-        // you're ready to add it to order
-	
-	// IF ORDER == NULL, THIS searchDepthFirst DOESNT HAVE WRITE PERMISSION
-	// DO NOT CONTINUE
+	// No write permission
 	if (order == NULL) {
 		return;
 	}
-
-	// only get here with WRITE PERMISSION
         int j = 0;
         while (j < MAX_NUM_NODES) {
 		if (order[j] == NULL) {
@@ -154,24 +136,18 @@ void searchDepthFirst(GraphNode* node, GraphNode** order) {
 		}
                 j++;
         }
-        // settles on next index w/o a node
+        // settles on next index without a node
         order[j] = node;
 
         return;
 }
 
-// Taking the command line arguments, this method determines
-// the build mode (either default or from a certain target)
-//This method takes in the command line arguments, and chooses the
-//graph's root based on that.
+
+// Determines the build mode and
+//graph's root based on command line arguments.
 GraphNode* findGraphRoot(int argc, const char* argv[], GraphNode** graph) {
-	// default, NULL case
 	char cmdArg[BUFFER_SIZE];
-	// default, NULL case
-	// if (argc == 1) {
-	// 	return NULL;
-	// }
-	// check for proper input
+
 	if (argc == 2)
 	{
 		strcpy(cmdArg, argv[1]);
