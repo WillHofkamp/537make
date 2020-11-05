@@ -11,13 +11,13 @@
 #include "buildSpecificationGraph.h"
 
 //This method parses the makefile for dependencies, then sets
-//the connection between targets and dependencies
-int connectNodes(GraphNode** graph) {
+//the links between targets and dependencies
+int showDependencies(GraphNode** graph) {
 	GraphNode* currNode;
 	GraphNode* nodeCheck;
 	int numNodes = 0;
-	// List of strings parsed as dependencies
-	char** dList;
+	// List of parsed dependencies
+	char** parsedStrings;
 
 	// find the number of nodes
 	while(graph[numNodes] != NULL && numNodes < MAX_NUM_NODES) {
@@ -36,19 +36,19 @@ int connectNodes(GraphNode** graph) {
 		}
 		currNode = graph[i];
 		//printf("----TARGET: %s----\n", currNode->name);
-		dList = parseTargetDependencies(currNode->line);
+		parsedStrings = parseTargetDependencies(currNode->line);
 
-		// Null handling for dList
-		if (dList == NULL) {
+		// Null handling for parsedStrings
+		if (parsedStrings == NULL) {
 			return 0;
 		}
 
 		// loop through dependencies to see if they are nodes
 		int j = 0;
-		while (dList[j] != NULL) {
+		while (parsedStrings[j] != NULL) {
 			// search for a node with that name
-			nodeCheck = findNode(dList[j],graph);
-			//printf("%s searched\n", dList[j]);
+			nodeCheck = findNode(parsedStrings[j],graph);
+			//printf("%s searched\n", parsedStrings[j]);
 			// if a node is found...
 			if (nodeCheck != NULL) {
 				//printf("\tsearch success\n");
@@ -59,21 +59,20 @@ int connectNodes(GraphNode** graph) {
 			// make a node for it, EVEN IF IT'S NOT A FILE
 			else {
 				//create node
-					graph[nextNodeIndex] = createNode(dList[j], -1);
+					graph[nextNodeIndex] = createNode(parsedStrings[j], -1);
 					addChildToParent(graph[i], graph[nextNodeIndex]);
 					nextNodeIndex++;
 			}
 			j++;
 		}
 
-		// free dList before loop
+		// free parsedStrings before loop
 		for (int f = 0; f < MAX_NUM_NODES; f++) {
 			// pay respects
-			free(dList[f]);
-			dList[f] = NULL;
-			//printf("D : %s\n", dList[f]);
+			free(parsedStrings[f]);
+			parsedStrings[f] = NULL;
 		}
-		free(dList);
+		free(parsedStrings);
 
 	}
 
@@ -82,7 +81,7 @@ int connectNodes(GraphNode** graph) {
 
 //This method creates the order the makefile will be built
 //this is also where the cycle checking in, and uses depth first search
-GraphNode** createGraphOrder(GraphNode* root, GraphNode** graph) {
+GraphNode** createFlow(GraphNode* root, GraphNode** graph) {
 	// handle NULL input - default case
 	if (root == NULL) {
 		// root is the first target listed in Makefile
@@ -101,7 +100,7 @@ GraphNode** createGraphOrder(GraphNode* root, GraphNode** graph) {
 		int k = 0;
 		while (graph[k] != NULL) {
 			graph[k]->checked = 0;
-			graph[k]->recur = 0;
+			graph[k]->repeated = 0;
 			k++;
 		}
 		j++;
@@ -117,7 +116,7 @@ GraphNode** createGraphOrder(GraphNode* root, GraphNode** graph) {
 //and also detects any cycles
 void searchDepthFirst(GraphNode* node, GraphNode** order) {
 	// finds if the node is in a loop
-	if (node->recur == 1) {
+	if (node->repeated == 1) {
 		fprintf(stderr, "%i: Error: loop in dependencies detected\n", node->line);
 		exit(0);
 	}
@@ -125,7 +124,7 @@ void searchDepthFirst(GraphNode* node, GraphNode** order) {
 		return;
 	}
 	node->checked = 1;
-	node->recur = 1;
+	node->repeated = 1;
 
         for (int i = 0; i < node->numchild; i++) {
 		// for each unchecked child
@@ -136,7 +135,7 @@ void searchDepthFirst(GraphNode* node, GraphNode** order) {
 		}
         }
 	// once you're here, you havent found a cycle
-	node->recur = 0;
+	node->repeated = 0;
 
         // once your done searchDepthFirst'ing through node's children
         // you're ready to add it to order
@@ -165,25 +164,28 @@ void searchDepthFirst(GraphNode* node, GraphNode** order) {
 // the build mode (either default or from a certain target)
 //This method takes in the command line arguments, and chooses the
 //graph's root based on that.
-GraphNode* findGraphRoot(int argc, const char* argv[], GraphNode** graph) {
+GraphNode* searchGraph(int argc, const char* argv[], GraphNode** graph) {
 	// default, NULL case
-	if (argc == 1) {
-		return NULL;
-	}
+	char cmdArg[BUFFER_SIZE];
+	// default, NULL case
+	// if (argc == 1) {
+	// 	return NULL;
+	// }
 	// check for proper input
-	else if (argc == 2) {
-		char argument[BUFFER];
-		strcpy(argument, argv[1]);
-		GraphNode* root = findNode(argument, graph);
-		if (root == NULL) {
-			fprintf(stderr,"Error: input is not valid\n");
+	if (argc == 2)
+	{
+		strcpy(cmdArg, argv[1]);
+		GraphNode *root = find(cmdArg, graph);
+		if (root == NULL)
+		{
+			fprintf(stderr, "Invalid input\n");
 			exit(1);
 		}
-		// not null, found a fitting root
 		return root;
 	}
-	else {
-		fprintf(stderr, "Error: too many arguments used\n");
+	else if (argc > 2)
+	{
+		fprintf(stderr, "Too many arguments provided\n");
 		exit(1);
 	}
 	return NULL;
