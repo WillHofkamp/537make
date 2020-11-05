@@ -1,16 +1,10 @@
-/////////////////////////////////////////////////
-//
-// File:	build_spec_graph.h
-//
-// Author:      Abhi Kosuri
-//              Mike Tuchler
-// All files:   build_spec_graph.c, .h
-//              build_spec_repr.c, .h
-//              proc_creation_prog_exe.c, .h
-//              text_parsing.c, .h
-//              main.c, README
-//
-/////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// Main File: 537make.c
+// This File: buildSpecificationGraph.h
+// Author:           William Hofkamp, Pranet Gowni
+// Email:            hofkamp@wisc.edu, gowni@wisc.edu
+// CS Login:         hofkamp, pranet
+////////////////////////////////////////////////////////////////////////////////
 
 #ifndef BUILD_SPEC_GRAPH_H
 #define BUILD_SPEC_GRAPH_H
@@ -21,11 +15,11 @@
 #include "buildSpecification.h"
 #include "makeFileParser.h"
 
-int connectNodes(GraphNode** graph);
+int showDependencies(GraphNode** graph);
 
-GraphNode** createGraphOrder(GraphNode* root, GraphNode** graph);
+GraphNode** createFlow(GraphNode* root, GraphNode** graph);
 
-void searchDepthFirst(GraphNode* node, GraphNode** order);
+void searchGraph(GraphNode* node, GraphNode** order);
 
 GraphNode* findGraphRoot(int argc, const char* argv[], GraphNode** graph);
 
