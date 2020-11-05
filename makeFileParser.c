@@ -32,12 +32,6 @@ FILE* openMakeFile() {
 	return file;
 }
 
-//This method closes the make file
-// void closeMakeFile(FILE* file) {
-// 	lineNum = 0;
-//     fclose(file);
-//     return;
-// }
 
 //This method parses the line for a target, and then inputs it
 //and saves it. The line number of the target is returned.
@@ -282,12 +276,12 @@ char** parseMakeCommandLine(int* lineNumber){
 
 //This method reads a line from the file and formats it correctly and checks if there are
 //any null characters in the line, not counting the newline terminator
-int readFileLine(char* buff, FILE* file) {
+int readFileLine(char* buff, FILE* f) {
 	int i = 0;
 	char c;
   	int cont = 1;
         while (cont) {
-                c = fgetc(file);
+                c = fgetc(f);
                 
                 if (c == ':'){
                   foundColon = true;
@@ -296,7 +290,7 @@ int readFileLine(char* buff, FILE* file) {
                         buff[i] = '\0';
                         cont = 0;
                 }
-                else if (feof(file)) {
+                else if (feof(f)) {
                         if (i == 0) {
                                 return -1;
                         }
@@ -311,7 +305,7 @@ int readFileLine(char* buff, FILE* file) {
 					if(i > 1 && buff[i-1] == ' ' && c == ' ') {
 					} 
 					else if (c == '\0') {
-						fprintf(stderr, "%i: Error: the target line has a null character between dependencies. \n", i);
+						fprintf(stderr, "the target line has a null character between dependencies. \n");
 						exit(1);
 					} else {
 						buff[i] = c;
