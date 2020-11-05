@@ -1,27 +1,22 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Main File: main.c
-// This File: queue.c
-// This File Description: This is the queue implementation which can create, as
-//						  well as enqueue and dequeue to, a queue whose stats 
-//						  can be printed out
+// Main File: 537make.c
+// This File: executeSpecificationGraph.c
+// This File Description: This method executes the graph in the order it was built
+//
 // Author:           William Hofkamp, Pranet Gowni
 // Email:            hofkamp@wisc.edu, gowni@wisc.edu
 // CS Login:         hofkamp, pranet
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#include "proc_creation_prog_exe.h"
+#include "executeSpecificationGraph.h"
 int wasexec = 0;
 
-// this method loops through each node in the build order
-// and calls execNode on it if applicable
-//
-// you only execute a node if it's a target (i.e. has commands)
-// AND, if its a file, if it's out of date.
-void execLoop(TreeNode** order) {
+//This method loops through each node and checks if they can be executed
+void checkNodes(GraphNode** order) {
 	int execute = 1;
 	int i = 0;
-	// printTree(order);
+	// printGraph(order);
 	while (order[i] != NULL) {
 		// check if it's a target
 		// if its line number = -1, don't exec
@@ -31,13 +26,13 @@ void execLoop(TreeNode** order) {
 		// check if it's a file
 		if (access(order[i]->name, F_OK) == 0) {
 			// if so, check if it's up to date
-			if (!timeCheck(order[i])) {
+			if (!modificationCheck(order[i])) {
 				execute = 0;
 			}
 		}
 		// great! you're good to go!
 		if (execute) {
-			execNode(order[i]);
+			executeNodeProcess(order[i]);
 		}
 		i++;
 		execute = 1;
@@ -49,11 +44,9 @@ void execLoop(TreeNode** order) {
 	return;
 }
 
-
-//this method creates a child process from the parent process
-//and makes it run as its own once execvp is called 
-//thus terminates the process once it is finished
-void execNode(TreeNode* node) {
+//This method creates a child proces from the parent process and runs it,
+//then moves on down the graph
+void executeNodeProcess(GraphNode* node) {
 	
 	int* line = &(node->line);
 	(*line)++;
@@ -61,7 +54,7 @@ void execNode(TreeNode* node) {
 	pid_t pid;
 	int status;
 	 
-	cmdList = parseCommandLine(line);
+	cmdList = parseMakeCommandLine(line);
 	while(cmdList != NULL){
 		pid = fork();
 
@@ -109,12 +102,13 @@ void execNode(TreeNode* node) {
 		}
 		free(cmdList);
 
-		cmdList = parseCommandLine(line);
+		cmdList = parseMakeCommandLine(line);
 	}
 
 	return;
 }
 
+//This method finds the modified time of a file
 static time_t getFileModifiedTime(const char *path)
 {
 	struct stat attr;
@@ -125,11 +119,9 @@ static time_t getFileModifiedTime(const char *path)
 	return 0;
 }
 
-// method used to determine if the file has been updated since
-// last compile. Assume input is a proper file that exists
-// input:	idk yet
-// return:	1 if it needs update, 0 if it doesnt
-int timeCheck(TreeNode* node) {
+//This method is used to check if the file has been modified
+//and if it should be build
+int modificationCheck(GraphNode* node) {
 	time_t t_node = getFileModifiedTime(node->name);
 	time_t t_child;
 

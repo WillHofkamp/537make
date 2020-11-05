@@ -6,36 +6,28 @@ SCAN_BUILD_DIR = scan-build-out
 LIBS=-lpthread # if needed, add more libraries here
 
 # the -g flag at all gcc compilation stages ensures that you can use gdb to debug your code
-$(EXE): main.o build_spec_graph.o text_parsing.o build_spec_repr.o proc_creation_prog_exe.o
-	$(CC) -g -o $(EXE) main.o build_spec_graph.o text_parsing.o build_spec_repr.o proc_creation_prog_exe.o $(LIBS)
+$(EXE): 537make.o buildSpecificationGraph.o makeFileParser.o buildSpecification.o executeSpecificationGraph.o
+	$(CC) -g -o $(EXE) 537make.o buildSpecificationGraph.o makeFileParser.o buildSpecification.o executeSpecificationGraph.o $(LIBS)
 
-main.o: main.c build_spec_graph.h text_parsing.h build_spec_repr.h proc_creation_prog_exe.h
-	$(CC) -g $(WARNING_FLAGS) -c main.c
+537make.o: 537make.c buildSpecificationGraph.h makeFileParser.h buildSpecification.h executeSpecificationGraph.h
+	$(CC) -g $(WARNING_FLAGS) -c 537make.c
 
-build_spec_graph.o: build_spec_graph.c build_spec_graph.h
-	$(CC) -g $(WARNING_FLAGS) -c build_spec_graph.c
+buildSpecificationGraph.o: buildSpecificationGraph.c buildSpecificationGraph.h
+	$(CC) -g $(WARNING_FLAGS) -c buildSpecificationGraph.c
 
-text_parsing.o: text_parsing.c text_parsing.h
-	$(CC) -g $(WARNING_FLAGS) -c text_parsing.c
+makeFileParser.o: makeFileParser.c makeFileParser.h
+	$(CC) -g $(WARNING_FLAGS) -c makeFileParser.c
 
-build_spec_repr.o: build_spec_repr.c build_spec_repr.h
-	$(CC) -g $(WARNING_FLAGS) -c build_spec_repr.c
+buildSpecification.o: buildSpecification.c buildSpecification.h
+	$(CC) -g $(WARNING_FLAGS) -c buildSpecification.c
 
-proc_creation_prog_exe.o: proc_creation_prog_exe.c proc_creation_prog_exe.h
-	$(CC) -g $(WARNING_FLAGS) -c proc_creation_prog_exe.c
+executeSpecificationGraph.o: executeSpecificationGraph.c executeSpecificationGraph.h
+	$(CC) -g $(WARNING_FLAGS) -c executeSpecificationGraph.c
 
 # the -f flag for rm ensures that clean doesn't fail if file to be deleted doesn't exist
 clean:
 	rm -f $(EXE) *.o
 	rm -rf $(SCAN_BUILD_DIR)
-
-# run the Clang Static Anaylzer
-scan-build: clean
-	scan-build -o $(SCAN_BUILD_DIR) make
-
-# view the one scan available using firefox
-scan-view: scan-build
-	firefox -new-window $(SCAN_BUILD_DIR)/*/index.html
 
 # recompile runs clean and then makes everything again to generate executable
 # this is equivalent to running "make clean" followed by "make"

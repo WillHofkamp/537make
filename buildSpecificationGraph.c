@@ -1,26 +1,26 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Main File: main.c
-// This File: queue.c
-// This File Description: This is the queue implementation which can create, as
-//						  well as enqueue and dequeue to, a queue whose stats 
-//						  can be printed out
+// Main File: 537make.c
+// This File: buildSpecificationGraph.c
+// This File Description: This method builds the specification graph
+//
 // Author:           William Hofkamp, Pranet Gowni
 // Email:            hofkamp@wisc.edu, gowni@wisc.edu
 // CS Login:         hofkamp, pranet
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "build_spec_graph.h"
+#include "buildSpecificationGraph.h"
 
-// parses Makefile for dependencies, and sets parents/children
-int connectNodes(TreeNode** graph) {
-	TreeNode* currNode;
-	TreeNode* nodeCheck;
+//This method parses the makefile for dependencies, then sets
+//the connection between targets and dependencies
+int connectNodes(GraphNode** graph) {
+	GraphNode* currNode;
+	GraphNode* nodeCheck;
 	int numNodes = 0;
 	// List of strings parsed as dependencies
 	char** dList;
 
 	// find the number of nodes
-	while(graph[numNodes] != NULL && numNodes < MAX_NODES) {
+	while(graph[numNodes] != NULL && numNodes < MAX_NUM_NODES) {
 		numNodes++;
 	}
 
@@ -36,7 +36,7 @@ int connectNodes(TreeNode** graph) {
 		}
 		currNode = graph[i];
 		//printf("----TARGET: %s----\n", currNode->name);
-		dList = parseDependencies(currNode->line);
+		dList = parseTargetDependencies(currNode->line);
 
 		// Null handling for dList
 		if (dList == NULL) {
@@ -47,32 +47,27 @@ int connectNodes(TreeNode** graph) {
 		int j = 0;
 		while (dList[j] != NULL) {
 			// search for a node with that name
-			nodeCheck = find(dList[j],graph);
+			nodeCheck = findNode(dList[j],graph);
 			//printf("%s searched\n", dList[j]);
 			// if a node is found...
 			if (nodeCheck != NULL) {
 				//printf("\tsearch success\n");
 				// add dependencies
-				parentChild(graph[i], nodeCheck);
+				addChildToParent(graph[i], nodeCheck);
 			}
 			// otherwise, it's a dependency but not a target
 			// make a node for it, EVEN IF IT'S NOT A FILE
 			else {
 				//create node
-				if (nextNodeIndex < MAX_NODES) {
-					graph[nextNodeIndex] = nodeInit(dList[j], -1);
-					parentChild(graph[i], graph[nextNodeIndex]);
+					graph[nextNodeIndex] = createNode(dList[j], -1);
+					addChildToParent(graph[i], graph[nextNodeIndex]);
 					nextNodeIndex++;
-				}
-				else {
-					fprintf(stderr,"Error: Too many nodes.\n");
-				}
 			}
 			j++;
 		}
 
 		// free dList before loop
-		for (int f = 0; f < MAX_NODES; f++) {
+		for (int f = 0; f < MAX_NUM_NODES; f++) {
 			// pay respects
 			free(dList[f]);
 			dList[f] = NULL;
@@ -85,26 +80,24 @@ int connectNodes(TreeNode** graph) {
 	return 0;
 }
 
-// using a DFS, creates a build order for the Makefile
-// also checks for cycles, which are bad
-// input:	the graph, i.e. list of node*s
-// return:	list of node*s in build/execution order
-TreeNode** buildOrder(TreeNode* root, TreeNode** graph) {
+//This method creates the order the makefile will be built
+//this is also where the cycle checking in, and uses depth first search
+GraphNode** createGraphOrder(GraphNode* root, GraphNode** graph) {
 	// handle NULL input - default case
 	if (root == NULL) {
 		// root is the first target listed in Makefile
 		root = graph[0];
 	}
 	//  initialize new buildOrder array
-	TreeNode** order = malloc(sizeof(TreeNode*)*MAX_NODES);
-	for (int i = 0; i < MAX_NODES; i++) {
+	GraphNode** order = malloc(sizeof(GraphNode*)*MAX_NUM_NODES);
+	for (int i = 0; i < MAX_NUM_NODES; i++) {
 		order[i] = NULL;
 	}
-	// call DFS on EVERY node, w/o write permission
+	// call searchDepthFirst on EVERY node, w/o write permission
 	int j = 0;
 	while (graph[j] != NULL) {
-		DFS(graph[j], NULL);
-		// reset for next DFS
+		searchDepthFirst(graph[j], NULL);
+		// reset for next searchDepthFirst
 		int k = 0;
 		while (graph[k] != NULL) {
 			graph[k]->checked = 0;
@@ -114,19 +107,18 @@ TreeNode** buildOrder(TreeNode* root, TreeNode** graph) {
 		j++;
 	}
 
-	//  call DFS on root node
-	DFS(root, order);
+	//  call searchDepthFirst on root node
+	searchDepthFirst(root, order);
 
 	return order;
 }
 
-// DFS function, that both builds order and detects cycles
-// inputs:	the node to DFS on, and the array to add stuff to build order
-// return:	nothing, but it does exit if it detects a cycle
-void DFS(TreeNode* node, TreeNode** order) {
+//This method is the depth first search function which builds the ordered graph
+//and also detects any cycles
+void searchDepthFirst(GraphNode* node, GraphNode** order) {
 	// finds if the node is in a loop
 	if (node->recur == 1) {
-		fprintf(stderr, "%i: Error: dependency loop detected\n", node->line);
+		fprintf(stderr, "%i: Error: loop in dependencies detected\n", node->line);
 		exit(0);
 	}
 	if (node->checked == 1) {
@@ -140,16 +132,16 @@ void DFS(TreeNode* node, TreeNode** order) {
 		// it it's a target
 		// recursive call
 		if (node->children[i]->line > 0) {
-			DFS(node->children[i], order);
+			searchDepthFirst(node->children[i], order);
 		}
         }
 	// once you're here, you havent found a cycle
 	node->recur = 0;
 
-        // once your done DFS'ing through node's children
+        // once your done searchDepthFirst'ing through node's children
         // you're ready to add it to order
 	
-	// IF ORDER == NULL, THIS DFS DOESNT HAVE WRITE PERMISSION
+	// IF ORDER == NULL, THIS searchDepthFirst DOESNT HAVE WRITE PERMISSION
 	// DO NOT CONTINUE
 	if (order == NULL) {
 		return;
@@ -157,7 +149,7 @@ void DFS(TreeNode* node, TreeNode** order) {
 
 	// only get here with WRITE PERMISSION
         int j = 0;
-        while (j < MAX_NODES) {
+        while (j < MAX_NUM_NODES) {
 		if (order[j] == NULL) {
 			break;
 		}
@@ -171,25 +163,27 @@ void DFS(TreeNode* node, TreeNode** order) {
 
 // Taking the command line arguments, this method determines
 // the build mode (either default or from a certain target)
-TreeNode* getRoot(int argc, const char* argv[], TreeNode** graph) {
+//This method takes in the command line arguments, and chooses the
+//graph's root based on that.
+GraphNode* findGraphRoot(int argc, const char* argv[], GraphNode** graph) {
 	// default, NULL case
 	if (argc == 1) {
 		return NULL;
 	}
 	// check for proper input
 	else if (argc == 2) {
-		char argument[BUFF_SIZE];
+		char argument[BUFFER];
 		strcpy(argument, argv[1]);
-		TreeNode* root = find(argument, graph);
+		GraphNode* root = findNode(argument, graph);
 		if (root == NULL) {
-			fprintf(stderr,"Error: input is not a valid argument\n");
+			fprintf(stderr,"Error: input is not valid\n");
 			exit(1);
 		}
 		// not null, found a fitting root
 		return root;
 	}
 	else {
-		fprintf(stderr, "Error: improper input format - too many arguments\n");
+		fprintf(stderr, "Error: too many arguments used\n");
 		exit(1);
 	}
 	return NULL;

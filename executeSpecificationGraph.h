@@ -1,16 +1,15 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Main File: main.c
-// This File: queue.c
-// This File Description: This is the queue implementation which can create, as
-//						  well as enqueue and dequeue to, a queue whose stats 
-//						  can be printed out
+// Main File: 537make.c
+// This File: fillGraph.h
+// This File Description: 
+//
 // Author:           William Hofkamp, Pranet Gowni
 // Email:            hofkamp@wisc.edu, gowni@wisc.edu
 // CS Login:         hofkamp, pranet
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef PROG_CREATION_PROC_EXE_H
-#define PROG_CREATION_PROC_EXE_H
+#ifndef FILL_GRAPH
+#define FILL_GRAPH
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,10 +19,12 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <time.h>
-#include "build_spec_graph.h"
+#include "buildSpecificationGraph.h"
 
-void execLoop(TreeNode** order);
-void execNode(TreeNode* node);
-int timeCheck(TreeNode* node);
+void checkNodes(GraphNode** order);
+
+void executeNodeProcess(GraphNode* node);
+
+int modificationCheck(GraphNode* node);
 
 #endif

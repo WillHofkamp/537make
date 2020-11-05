@@ -1,49 +1,52 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Main File: main.c
-// This File: queue.c
-// This File Description: This is the queue implementation which can create, as
-//						  well as enqueue and dequeue to, a queue whose stats 
-//						  can be printed out
+// Main File: 537make.c
+// This File: makeFileParser.c
+// This File Description: This file parses each part of the makefile including the
+//						  targets, dependencies, and command line
+//
 // Author:           William Hofkamp, Pranet Gowni
 // Email:            hofkamp@wisc.edu, gowni@wisc.edu
 // CS Login:         hofkamp, pranet
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#include "text_parsing.h"
+#include "makeFileParser.h"
+#include <stdbool.h>
+#include <ctype.h>
 
 int lineNum = 0;
+bool foundColon = false;
 
-//opens the file and error handles
-FILE* openFile() {
+//This method opens the makefile
+FILE* openMakeFile() {
 	FILE* file  = fopen("makefile", "r");
 
 	if(file == NULL) {
 		file = fopen("Makefile", "r");
 		if (file == NULL) {
-                	fprintf(stderr, "Error opening file\n");
-                	exit(1);
+            fprintf(stderr, "Error: Could not open file\n");
+            exit(1);
 		}
 	}
 
 	return file;
 }
 
-//method to close the file once it has been openend
-void closeFile(FILE* file) {
+//This method closes the make file
+void closeMakeFile(FILE* file) {
 	lineNum = 0;
         fclose(file);
         return;
 }
 
-//function to parse the target of each line
-//inputs buffer to an empty array and pointer to an open file
-//returns line number 
-int parseTargets(char* name, FILE* file){
+//This method parses the line for a target, and then inputs it
+//and saves it. The line number of the target is returned.
+int parseMakeTargets(char* name, FILE* file){
 	
 	char* token;
 	char* rest = NULL;
-	char line[BUFF_SIZE];
+	char line[BUFFER];
+  
 	
 	if(name == NULL){
 		printf("Not a valid name");
@@ -56,12 +59,12 @@ int parseTargets(char* name, FILE* file){
 
 	while(!feof(file)) {
 		// read in line
-		int result = readLine(line, file);
+		int result = readFileLine(line, file);
 		if (result == -1) {
 			return 0;
 		}
 		else if (result == -2) {
-			fprintf(stderr, "%i: Line too long\n", lineNum);
+			fprintf(stderr, "%i: Error: Line longer than buffer \"%s\"\n", lineNum, line);
 			exit(0);
 		}
 
@@ -70,25 +73,17 @@ int parseTargets(char* name, FILE* file){
 		if (line[0] != '\0' && line[0] != '\t' && line[0] != '#' && line[0] != ' ') {	
 			token = strtok_r(line, ":", &rest);
 			if (token == NULL){
-				fprintf(stderr, "%i: Incorrect target \"%s\"\n", lineNum, line);
+				fprintf(stderr, "%i: Target is incorrect \"%s\"\n", lineNum, line);
 				exit(1);
-			}
-			else{
-				strcpy(name,token);
-				// whitespace handling
-				int j = 0;
-				while(j < BUFF_SIZE) {
-					if (name[j] != ' ' && name[j] == '\0') {
-						lineNum++;
-					} else if (name[j] == '\n') {
-						break;
-					} else if (name[j] == '\0') {
-						fprintf(stderr, "%i: Null character in target line \"%s\"\n", lineNum, line);
-						exit(1);
-					}
-					j++;
-				}
-				return lineNum;
+			} else if (foundColon == false){
+    			fprintf(stderr, "%i:Error: Colon is missing \"%s\"\n",lineNum,line);
+    			exit(1);
+    		} else{
+				memset(name, 0, strlen(name));
+				strncpy(name,token, strlen(token));
+				// remove any extra whitespace
+				skipWhitespace(name);
+				return lineNum++;
 			}
 		}
 		else {
@@ -99,13 +94,20 @@ int parseTargets(char* name, FILE* file){
 	return 0;
 }
 
-//function to handle the dependencies as they could be the
-//name of another target or name of another file 
-//takes reads each line in from the line buffer checking for
-//dependencies.
-char** parseDependencies(int lineNumba){
+//This method is used to trim any excess whitespace from the target
+void skipWhitespace(char* str) {
+  int i, x;
+  for(i=x=0; str[i]; ++i) {
+	  if(!isspace(str[i]) || (i > 0 && !isspace(str[i-1]))) {
+		str[x++] = str[i];
+	}
+  }
+}
+
+//This method parses the dependencies based on the line of the file
+char** parseTargetDependencies(int lineNumba){
 	
-	FILE* file = openFile();
+	FILE* file = openMakeFile();
 
 	//throw out lines until you get to lineNum
 	for(int d = 1; d < lineNumba; d++){
@@ -116,17 +118,16 @@ char** parseDependencies(int lineNumba){
 		}
 	}
 
-	char* line = calloc(BUFF_SIZE, sizeof(char));
-	//char* line = malloc(BUFF_SIZE);
+	char* line = calloc(BUFFER, sizeof(char));
 
 	// read into line
-	int result = readLine(line, file);
+	int result = readFileLine(line, file);
 
 	if (result != 0) {
 		return NULL;
 	}
 	else if (result == -2) {
-		fprintf(stderr, "%i: Line too long\n", lineNumba);
+		fprintf(stderr, "%i: Error: Line longer than buffer \"%s\"\n", lineNumba, line);
 		exit(0);
 	}
 	
@@ -135,9 +136,11 @@ char** parseDependencies(int lineNumba){
 		return NULL;
 	}
 
-	char** dList = malloc(sizeof(char*)*MAX_NODES);	
-	for (int n = 0; n < MAX_NODES; n++) {
-		dList[n] = malloc(BUFF_SIZE);
+	char** dList = malloc(sizeof(char*)*MAX_NUM_NODES
+);	
+	for (int n = 0; n < MAX_NUM_NODES
+; n++) {
+		dList[n] = malloc(BUFFER);
         }
 
 	// index of line read from Makefile
@@ -148,12 +151,12 @@ char** parseDependencies(int lineNumba){
 	int deppIndex = 0;
 
 	// read until the colon to get the first dependancy
-	while (lineIndex < BUFF_SIZE && line[lineIndex] != ':') {
+	while (lineIndex < BUFFER && line[lineIndex] != ':') {
 		lineIndex++;
 	}
 	lineIndex++;
 	// throw out all subsequent spaces
-	while (lineIndex < BUFF_SIZE && line[lineIndex] == ' ') {
+	while (lineIndex < BUFFER && line[lineIndex] == ' ') {
 		lineIndex++;
 	}
 
@@ -162,9 +165,9 @@ char** parseDependencies(int lineNumba){
 	// 	- chars making up the dependants
 	// 	- followed by some non-zero number of spaces
 	// 	- all ending in a terminator
-	while (lineIndex < BUFF_SIZE && line[lineIndex] != '\0' && listIndex < MAX_NODES) {
+	while (lineIndex < BUFFER && lineIndex < (int)strlen(line) && listIndex < MAX_NUM_NODES) {
 		// if you find a non-space, non-terminating char...
-		if (lineIndex < BUFF_SIZE && line[lineIndex] != ' ') {
+		if (line[lineIndex] != ' ') {
 			// ...set char in dList and increment
 			dList[listIndex][deppIndex] = line[lineIndex];
 			deppIndex++;
@@ -179,7 +182,7 @@ char** parseDependencies(int lineNumba){
 			listIndex++;
 			deppIndex = 0;
 			// while loop ignores multiple consecutive spaces
-			while (lineIndex < BUFF_SIZE && line[lineIndex] == ' ') {
+			while (lineIndex < BUFFER && line[lineIndex] == ' ') {
 				lineIndex++;
 			}
 		}
@@ -192,19 +195,17 @@ char** parseDependencies(int lineNumba){
 	free(dList[listIndex]);
 	dList[listIndex] = NULL;
 	
-	closeFile(file);
+	closeMakeFile(file);
 	free(line);
 	return dList;
 }
 
-//function parses the command line
-//reads up to the line if starts with a tab character
-//return an array of strings that are passed into execvp() 
-//returns NULL on end of cmd lines or EOF
-char** parseCommandLine(int* lineNumba){
+//This method parses the command line of the makefile
+//And returns an array of strings or null if the line is over
+char** parseMakeCommandLine(int* lineNumba){
 	
-	FILE* file = openFile();
-	char line[BUFF_SIZE];
+	FILE* file = openMakeFile();
+	char line[BUFFER];
 
         //read each lineNum and throws out the newline
         for(int d = 1; d < *lineNumba; d++){
@@ -225,10 +226,16 @@ char** parseCommandLine(int* lineNumba){
 		// Ignore a line that starts with a newline or #
 		if (c == '\n' || c == '#') {
 			(*lineNumba)++;
-			return parseCommandLine(lineNumba);
+			return parseMakeCommandLine(lineNumba);
 		}
 		else {
-			return NULL;
+			if(c == ' ') {
+				fprintf(stderr, "%i: Error: should start with a tab character \n", *lineNumba);
+				exit(1);
+			} else {
+				return NULL;
+			}
+			
 		}
 	}
 
@@ -239,12 +246,12 @@ char** parseCommandLine(int* lineNumba){
 	}
 
 	// read in line
-	int result = readLine(line, file);
+	int result = readFileLine(line, file);
 	if (result != 0) {
 		return NULL;
 	}
 	else if (result == -2) {
-		fprintf(stderr, "%i: Line too long\n", *lineNumba);
+		fprintf(stderr, "%i: Error: Line longer than buffer \"%s\"\n", *lineNumba, line);
 		exit(0);
 	}
 
@@ -257,7 +264,7 @@ char** parseCommandLine(int* lineNumba){
 	int arggIndex = 0;
 
 	// read into the array we return
-	while (line[lineIndex] != '\0' && listIndex < MAX_NODES) {
+	while (line[lineIndex] != '\0' && listIndex < MAX_NUM_NODES) {
                 // if you find a non-space char...
                 if (line[lineIndex] != ' ') {
                         // ...set char in array and increment
@@ -284,16 +291,22 @@ char** parseCommandLine(int* lineNumba){
 	free(array[listIndex]);
 	array[listIndex] = NULL;
 
-	closeFile(file);
+	closeMakeFile(file);
 	return array;
 }
 
-int readLine(char* buff, FILE* file) {
+//This method reads a line from the file and formats it correctly and checks if there are
+//any null characters in the line, not counting the newline terminator
+int readFileLine(char* buff, FILE* file) {
 	int i = 0;
 	char c;
-        int cont = 1;
+  	int cont = 1;
         while (cont) {
                 c = fgetc(file);
+                
+                if (c == ':'){
+                  foundColon = true;
+                }
                 if (c == '\n') {
                         buff[i] = '\0';
                         cont = 0;
@@ -305,14 +318,21 @@ int readLine(char* buff, FILE* file) {
                         buff[i] = '\0';
                         cont = 0;
                 }
-                else if (i == BUFF_SIZE) {
+                else if (i == BUFFER) {
                         return -2;
                 }
                 // no stop condition, read the character!
-                if (cont) {
-                        buff[i] = c;
-                }
-                i++;
+        		if (cont) {
+					if(i > 1 && buff[i-1] == ' ' && c == ' ') {
+					} 
+					else if (c == '\0') {
+						fprintf(stderr, "%i: Error: the target line has a null character between dependencies. \n", i);
+						exit(1);
+					} else {
+						buff[i] = c;
+					}
+        		}
+       		i++;
         }
 	return 0;
 }
