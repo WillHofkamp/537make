@@ -33,15 +33,15 @@ FILE* openMakeFile() {
 }
 
 //This method closes the make file
-void closeMakeFile(FILE* file) {
-	lineNum = 0;
-        fclose(file);
-        return;
-}
+// void closeMakeFile(FILE* file) {
+// 	lineNum = 0;
+//     fclose(file);
+//     return;
+// }
 
 //This method parses the line for a target, and then inputs it
 //and saves it. The line number of the target is returned.
-int parseMakeTargets(char* name, FILE* file){
+int parseMakeTargets(char* name, FILE* f){
 	
 	char* token;
 	char* rest = NULL;
@@ -57,14 +57,14 @@ int parseMakeTargets(char* name, FILE* file){
 		lineNum = 1;
 	}
 
-	while(!feof(file)) {
+	while(!feof(f)) {
 		// read in line
-		int result = readFileLine(line, file);
+		int result = readFileLine(line, f);
 		if (result == -1) {
 			return 0;
 		}
 		else if (result == -2) {
-			fprintf(stderr, "%i: Error: Line longer than buffer \"%s\"\n", lineNum, line);
+			fprintf(stderr, "Line longer than buffer\n");
 			exit(0);
 		}
 
@@ -195,7 +195,8 @@ char** parseTargetDependencies(int lineNumba){
 	free(dList[listIndex]);
 	dList[listIndex] = NULL;
 	
-	closeMakeFile(file);
+	lineNum = 0;
+    fclose(file);
 	free(line);
 	return dList;
 }
@@ -291,7 +292,8 @@ char** parseMakeCommandLine(int* lineNumba){
 	free(array[listIndex]);
 	array[listIndex] = NULL;
 
-	closeMakeFile(file);
+	lineNum = 0;
+    fclose(file);
 	return array;
 }
 

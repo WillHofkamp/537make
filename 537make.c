@@ -13,14 +13,11 @@
 #include "buildSpecificationGraph.h"
 #include "executeSpecificationGraph.h"
 
-void testParseCommandLine();
-void testGetNodes();
-void freeGraphMemory(GraphNode **graph);
 
 int main(int argc, const char* argv[]) {
 	GraphNode** graph = getNodes();
 	GraphNode* root = findGraphRoot(argc, argv, graph);
-	connectNodes(graph);
+	showDependencies(graph);
 	GraphNode** order = createGraphOrder(root, graph);
 	checkNodes(order);
 	freeGraphMemory(graph);
