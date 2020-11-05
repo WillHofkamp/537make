@@ -164,7 +164,7 @@ void searchDepthFirst(GraphNode* node, GraphNode** order) {
 // the build mode (either default or from a certain target)
 //This method takes in the command line arguments, and chooses the
 //graph's root based on that.
-GraphNode* searchGraph(int argc, const char* argv[], GraphNode** graph) {
+GraphNode* findGraphRoot(int argc, const char* argv[], GraphNode** graph) {
 	// default, NULL case
 	char cmdArg[BUFFER_SIZE];
 	// default, NULL case
