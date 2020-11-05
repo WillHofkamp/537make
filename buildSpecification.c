@@ -23,7 +23,7 @@ GraphNode* createNode(char *name, int line) {
     strcpy(node->name, name);
     node->line = line;
     node->checked = 0;
-	node->recur = 0;
+	node->repeated = 0;
     // parent and children are null, but memory is allocated for children
 	node->children = malloc(sizeof(GraphNode*)*MAX_NUM_NODES);
 	node->numchild = 0;
@@ -60,15 +60,13 @@ GraphNode** getNodes() {
 
 	// Pointer to the open file
 	FILE *f = openMakeFile();
-	// first parseMakeTargets call
 	lineNum = parseMakeTargets(targetBuff, f);
-	// Loop thru the file
+	// Loop through the file
 	while (nodeIndex < BUFFER && lineNum > 0) {
-		// parseMakeTargets finds the next line with a viable
-		// target and copies it into the input buffer. Then
-		// it returns the line number it found it on
+		// parseMakeTargets finds copies the next line with a target
+		// into the buffer and returns the line number
 		nodeCheck = createNode(targetBuff, lineNum);
-		// checking for multiple targets with the same name
+		// checking for duplicate targets
 		if (findNode(nodeCheck->name, graph) != NULL) {
 			fprintf(stderr, "Error: targets have multiples of name: %s\n", nodeCheck->name);
 			exit(1);
@@ -76,8 +74,6 @@ GraphNode** getNodes() {
 		graph[nodeIndex] = nodeCheck;
 		nodeIndex++;
 		if (nodeIndex < BUFFER && nodeIndex == MAX_NUM_NODES ) {
-			//fprintf(stderr, "Error: Makefile too long: %i\n", nodeIndex);
-			//exit(1);
       graph = realloc(graph,sizeof(GraphNode*)*(maxNodesTracker * multiplier));
       if(maxNodesTracker == 0){
       maxNodesTracker = MAX_NUM_NODES * multiplier;
@@ -99,8 +95,8 @@ GraphNode** getNodes() {
 GraphNode* findNode(char* name, GraphNode** graph) {
         int index = 0;
         int cmp;
-        // loop until you've hit the max or the end
-        // nodes are filled into the graph L to R
+        // loop until you reach the max or the end
+        // nodes are filled into the graph
         while (index < MAX_NUM_NODES && graph[index] != NULL) {
                 cmp = strcmp(name, graph[index]->name);
                 if (cmp == 0) {
@@ -110,19 +106,17 @@ GraphNode* findNode(char* name, GraphNode** graph) {
                         index++;
                 }
         }
-        // if it leaves the loop without finding a node
         return NULL;
 
 }
 
 //This method adds a child to a parent's list
 void addChildToParent(GraphNode* parent, GraphNode* child) {
-	// set child's parent node
+	// set parent
 	child->parent = parent;
 	// add child to parent's array
 	parent->children[parent->numchild] = child;
 	parent->numchild++;
-	// no space for more children
 	return;
 }
 
