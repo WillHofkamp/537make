@@ -19,7 +19,7 @@ int showDependencies(GraphNode** graph);
 
 GraphNode** createFlow(GraphNode* root, GraphNode** graph);
 
-void searchGraph(GraphNode* node, GraphNode** order);
+void searchDepthFirst(GraphNode* node, GraphNode** order);
 
 GraphNode* findGraphRoot(int argc, const char* argv[], GraphNode** graph);
 
