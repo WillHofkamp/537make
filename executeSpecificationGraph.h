@@ -21,7 +21,7 @@
 #include <time.h>
 #include "buildSpecificationGraph.h"
 
-void checkNodes(GraphNode** order);
+void checkNodes(GraphNode** flow);
 
 void executeNodeProcess(GraphNode* node);
 
