@@ -32,8 +32,7 @@ GraphNode* createNode(char *name, int line) {
 }
 
 //This method frees a node based on the pointer
-//of a node passed in. 0 is returned if it is freed
-//properly
+//of a node passed in.
 int freeNode(GraphNode* node) {
     free(node->name);
     node->name = NULL;
@@ -46,13 +45,13 @@ int freeNode(GraphNode* node) {
 
 //This input reads the makefile and turns the targets into nodes
 GraphNode** getNodes() {
-	// Returned array of TreeNodes
+	// Returned array of GraphNodes
 	GraphNode** graph = malloc(sizeof(GraphNode*)*MAX_NUM_NODES);
 	// initialize graph to NULL
 	for (int i = 0; i < MAX_NUM_NODES; i++) {
 		graph[i] = NULL;
 	}
-	// ints and buffer
+
 	int nodeIndex = 0;
 	int lineNum = 0;
 	char* targetBuff = calloc(BUFFER, sizeof(char));
