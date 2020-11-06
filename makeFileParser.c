@@ -132,16 +132,16 @@ char** parseTargetDependencies(int targetLineNum){
 		return NULL;
 	}
 
-	char** dList = malloc(sizeof(char*)*MAX_NUM_NODES);	
+	char** dependencyList = malloc(sizeof(char*)*MAX_NUM_NODES);	
 	for (int n = 0; n < MAX_NUM_NODES; n++) {
-		dList[n] = malloc(BUFFER);
+		dependencyList[n] = malloc(BUFFER);
     }
 
 	// index of line read from Makefile
 	int lineIndex = 0;
-	// index of dependant number in parsedStrings
+	// index of dependant number in dependencyList
 	int listIndex = 0;
-	// index of dependant string in parsedStrings
+	// index of dependant string in dependencyList
 	int depIndex = 0;
 
 	// read until ":" is found
@@ -161,16 +161,16 @@ char** parseTargetDependencies(int targetLineNum){
 	while (lineIndex < BUFFER && line[lineIndex] != '\0' && listIndex < MAX_NUM_NODES) {
 		// if you find a non-space, non-terminating char...
 		if (lineIndex < BUFFER && line[lineIndex] != ' ') {
-			// ...set char in dList and increment
-			dList[listIndex][deppIndex] = line[lineIndex];
-			deppIndex++;
+			// ...set char in dependencyList and increment
+			dependencyList[listIndex][depIndex] = line[lineIndex];
+			depIndex++;
 			// ...look at next char
 			lineIndex++;
 		}
 		// if a space char is found
 		else {
 			// append a null terminator
-			parsedStrings[listIndex][depIndex] = '\0';
+			dependencyList[listIndex][depIndex] = '\0';
 			listIndex++;
 			depIndex = 0;
 			while (lineIndex < BUFFER && line[lineIndex] == ' ') {
@@ -180,16 +180,16 @@ char** parseTargetDependencies(int targetLineNum){
 	}
 	// if "\0:" found
 	if (depIndex != 0) {
-		parsedStrings[listIndex][depIndex] = '\0';
+		dependencyList[listIndex][depIndex] = '\0';
 		listIndex++;
 	}
-	free(parsedStrings[listIndex]);
-	parsedStrings[listIndex] = NULL;
+	free(dependencyList[listIndex]);
+	dependencyList[listIndex] = NULL;
 	
 	lineNum = 0;
     fclose(file);
 	free(line);
-	return parsedStrings;
+	return dependencyList;
 }
 
 //This method parses the command line of the makefile
@@ -279,7 +279,7 @@ char** parseMakeCommandLine(int* cmdLineNum){
 	free(cmdArray[listIndex]);
 	cmdArray[listIndex] = NULL;
 
-	closeMakeFile(file);
+	fclose(file);
 	return cmdArray;
 }
 

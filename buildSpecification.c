@@ -88,8 +88,9 @@ GraphNode** getNodes() {
 		lineNum = parseMakeTargets(targetBuff, f);
 	}
 	// Close the file
-	closeMakeFile(f);
-	free(targetBuff);
+	lineNum = 0;
+    fclose(f);
+    free(targetBuff);
   
     return graph;
 }

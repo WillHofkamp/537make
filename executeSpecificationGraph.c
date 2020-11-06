@@ -34,7 +34,7 @@ void checkNodes(GraphNode** flow) {
 		i++;
 		execute = 1;
 	}
-	if (!executed) {
+	if (!wasexec) {
 		fprintf(stderr, "All files up-to-date\n");
 	}
 
@@ -109,7 +109,7 @@ void executeNodeProcess(GraphNode* node) {
 			}
 		}	
 		//line executed
-		executed = 1;
+		wasexec = 1;
 		(*line)++;
 
 		// free previous command list
