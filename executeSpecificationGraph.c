@@ -8,8 +8,8 @@
 // CS Login:         hofkamp, pranet
 ////////////////////////////////////////////////////////////////////////////////
 
-
 #include "executeSpecificationGraph.h"
+
 int wasexec = 0;
 
 //This method loops through each node and checks if they can be executed
@@ -44,6 +44,17 @@ void checkNodes(GraphNode** order) {
 	return;
 }
 
+void strip_extra_spaces(char* str) {
+  int i, x;
+  printf("Before %s \n", str);
+  for(i=x=0; str[i]; ++i) {
+	  if(!isspace(str[i]) || (i > 0 && !isspace(str[i-1]))) {
+		str[x++] = str[i];
+	}
+  }
+  printf("Before %s \n", str);
+}
+
 //This method creates a child proces from the parent process and runs it,
 //then moves on down the graph
 void executeNodeProcess(GraphNode* node) {
@@ -62,12 +73,22 @@ void executeNodeProcess(GraphNode* node) {
 			fprintf(stderr, "Process could not be forked\n");
 			exit(0);
 		}
-               	else if(pid == 0){
+        else if(pid == 0){
 			// EXECUTE THE LINE
+			int i = 0;
+			while (cmdList[i] != NULL) {
+				if(!isspace(cmdList[i])) {
+					strip_extra_spaces(cmdList[i]);
+				} else {
+					if(cmdList[i+1] != NULL) {
+						cmdList[i] = cmdList[i+1];
+					}
+				}
+				i++;
+			}
 			execvp(cmdList[0], cmdList);
 			exit(EXIT_FAILURE);
 		}
-
 		else{
 			wait(&status);
 			if (WEXITSTATUS(status)) {
@@ -83,10 +104,10 @@ void executeNodeProcess(GraphNode* node) {
 			}
 			else {
 				// manually print command
-				int x = 0;
+				int x = 1;
 				while (cmdList[x] != NULL) {
 					fprintf(stderr, "%s ", cmdList[x]);
-				x++;
+					x++;
 				}
 				fprintf(stderr, "\n");
 			}
@@ -96,8 +117,7 @@ void executeNodeProcess(GraphNode* node) {
 		(*line)++;
 
 		// free previous command list
-		for (int f = 0; f < CMD_SIZE; f++) {
-			// pay respects
+		for (int f = 0; f < MAX_CMD_SIZE; f++) {
 			free(cmdList[f]);
 		}
 		free(cmdList);

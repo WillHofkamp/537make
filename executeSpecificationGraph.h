@@ -1,7 +1,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Main File: 537make.c
-// This File: fillGraph.h
-// This File Description: 
+// This File: executeSpecificationGraph.h
+// This File Description: This is the interface for the class that executes the
+//                        the processes in the specification graph
 //
 // Author:           William Hofkamp, Pranet Gowni
 // Email:            hofkamp@wisc.edu, gowni@wisc.edu
@@ -19,9 +20,12 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <time.h>
+#include <ctype.h>
 #include "buildSpecificationGraph.h"
 
 void checkNodes(GraphNode** order);
+
+void strip_extra_spaces(char* str);
 
 void executeNodeProcess(GraphNode* node);
 

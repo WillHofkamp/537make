@@ -18,12 +18,15 @@ int maxNodesTracker = 64;
 //based on the name of the file and the line number
 //returns the new node
 GraphNode* createNode(char *name, int line) {
+	//allocates memory for node
     GraphNode* node = malloc(sizeof(GraphNode));
     node->name = malloc(BUFFER);
     strcpy(node->name, name);
+
+	//set data
     node->line = line;
-    node->checked = 0;
-	node->recur = 0;
+    node->visited = 0;
+	node->recurred = 0;
     // parent and children are null, but memory is allocated for children
 	node->children = malloc(sizeof(GraphNode*)*MAX_NUM_NODES);
 	node->numchild = 0;
@@ -35,10 +38,13 @@ GraphNode* createNode(char *name, int line) {
 //of a node passed in. 0 is returned if it is freed
 //properly
 int freeNode(GraphNode* node) {
+	//free any data
     free(node->name);
     node->name = NULL;
 	free(node->children);
 	node->children = NULL;
+
+	//finally free node
 	free(node);
 	node = NULL;
     return 0;
@@ -62,7 +68,6 @@ GraphNode** getNodes() {
 	FILE *f = openMakeFile();
 	// first parseMakeTargets call
 	lineNum = parseMakeTargets(targetBuff, f);
-	// Loop thru the file
 	while (nodeIndex < BUFFER && lineNum > 0) {
 		// parseMakeTargets finds the next line with a viable
 		// target and copies it into the input buffer. Then
@@ -76,14 +81,12 @@ GraphNode** getNodes() {
 		graph[nodeIndex] = nodeCheck;
 		nodeIndex++;
 		if (nodeIndex < BUFFER && nodeIndex == MAX_NUM_NODES ) {
-			//fprintf(stderr, "Error: Makefile too long: %i\n", nodeIndex);
-			//exit(1);
-      graph = realloc(graph,sizeof(GraphNode*)*(maxNodesTracker * multiplier));
-      if(maxNodesTracker == 0){
-      maxNodesTracker = MAX_NUM_NODES * multiplier;
-      } else {
-      maxNodesTracker = maxNodesTracker * multiplier;
-      }
+      		graph = realloc(graph,sizeof(GraphNode*)*(maxNodesTracker * multiplier));
+      		if(maxNodesTracker == 0){
+     			maxNodesTracker = MAX_NUM_NODES * multiplier;
+      		} else {
+      			maxNodesTracker = maxNodesTracker * multiplier;
+     		}
 		}
 		lineNum = parseMakeTargets(targetBuff, f);
 	}
@@ -91,7 +94,7 @@ GraphNode** getNodes() {
 	closeMakeFile(f);
 	free(targetBuff);
   
-        return graph;
+    return graph;
 }
 
 //This method finds a node that has a certain name in the graph
@@ -104,10 +107,10 @@ GraphNode* findNode(char* name, GraphNode** graph) {
         while (index < MAX_NUM_NODES && graph[index] != NULL) {
                 cmp = strcmp(name, graph[index]->name);
                 if (cmp == 0) {
-                        return graph[index];
+                    return graph[index];
                 }
                 else {
-                        index++;
+                    index++;
                 }
         }
         // if it leaves the loop without finding a node

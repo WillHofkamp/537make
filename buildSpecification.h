@@ -21,12 +21,9 @@
 typedef struct GraphNode GraphNode;
 struct GraphNode {
         char *name;
-        int line;
+        int line, numchild, visited, recurred;
         GraphNode *parent;
         GraphNode **children;
-	int numchild;
-        int checked;
-	int recur;
 };
 
 GraphNode* createNode(char* name, int line);

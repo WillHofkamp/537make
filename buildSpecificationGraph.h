@@ -17,11 +17,8 @@
 
 int connectNodes(GraphNode** graph);
 
-GraphNode** createGraphOrder(GraphNode* root, GraphNode** graph);
+GraphNode** createOrderedGraph(GraphNode* root, GraphNode** graph);
 
-void searchDepthFirst(GraphNode* node, GraphNode** order);
-
-GraphNode* findGraphRoot(int argc, const char* argv[], GraphNode** graph);
-
+void searchDepthFirst(GraphNode* node, GraphNode** ordered);
 
 #endif

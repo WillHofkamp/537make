@@ -15,24 +15,25 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #define BUFFER 4096
 
 static const int MAX_NUM_NODES = 64;
-static const int CMD_SIZE = 64;
+static const int MAX_CMD_SIZE = 64;
+
+void setFileName(const char* name);
 
 FILE* openMakeFile();
 
 void closeMakeFile(FILE* file);
 
-int parseMakeTargets(char* target, FILE* file);
+int parseMakeTargets(char* targetString, FILE* file);
 
 char** parseTargetDependencies(int lineNum);
 
 char** parseMakeCommandLine(int* lineNum);
 
-int readFileLine(char* buff, FILE* file);
-
-void skipWhitespace(char* str);
+int readFileLine(char* cmdString, FILE* file, int lineNum);
 
 #endif
