@@ -13,7 +13,6 @@
 #include "buildSpecificationGraph.h"
 #include "executeSpecificationGraph.h"
 
-void freeGraphMemory(GraphNode **graph);
 
 int main(int argc, const char* argv[]) {
 	if(argc == 1) {

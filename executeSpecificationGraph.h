@@ -23,9 +23,9 @@
 #include <ctype.h>
 #include "buildSpecificationGraph.h"
 
-void checkNodes(GraphNode** order);
+void checkNodes(GraphNode** flow);
 
-void strip_extra_spaces(char* str);
+void removeWhitespace(char* str);
 
 void executeNodeProcess(GraphNode* node);
 

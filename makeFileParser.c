@@ -42,12 +42,6 @@ FILE* openMakeFile() {
 	}
 }
 
-//This method closes the make file
-void closeMakeFile(FILE* file) {
-	lineNum = 0;
-        fclose(file);
-        return;
-}
 
 //This method parses the line for a target, and then inputs it
 //and saves it. The line number of the target is returned.
@@ -61,7 +55,6 @@ int parseMakeTargets(char* targetString, FILE* file){
 	if(targetString == NULL){
 		return 0;
 	}	
-	// only initialize lineNum if you're first to do it
 	if (lineNum == 0) {
 		lineNum = 1;
 	}
@@ -73,7 +66,7 @@ int parseMakeTargets(char* targetString, FILE* file){
 			return 0;
 		}
 		else if (result == -2) {
-			fprintf(stderr, "%i: Error: Line longer than buffer \"%s\"\n", lineNum, line);
+			fprintf(stderr, "Line longer than buffer\n");
 			exit(0);
 		}
 
@@ -101,7 +94,7 @@ int parseMakeTargets(char* targetString, FILE* file){
 			}
 		}
 		else {
-			//line starts with a \n or \t or #: ignore it
+			//skip line
 		}
 		lineNum++;
 	}		
@@ -146,17 +139,16 @@ char** parseTargetDependencies(int targetLineNum){
 
 	// index of line read from Makefile
 	int lineIndex = 0;
-	// index of dependant number in dList (first array index)
+	// index of dependant number in parsedStrings
 	int listIndex = 0;
-	// index of dependant string in dList (second array index)
-	int deppIndex = 0;
+	// index of dependant string in parsedStrings
+	int depIndex = 0;
 
-	// read until the colon to get the first dependancy
+	// read until ":" is found
 	while (lineIndex < BUFFER && line[lineIndex] != ':') {
 		lineIndex++;
 	}
 	lineIndex++;
-	// throw out all subsequent spaces
 	while (lineIndex < BUFFER && line[lineIndex] == ' ') {
 		lineIndex++;
 	}
@@ -175,30 +167,29 @@ char** parseTargetDependencies(int targetLineNum){
 			// ...look at next char
 			lineIndex++;
 		}
-		// if you find a space char...
+		// if a space char is found
 		else {
 			// append a null terminator
-			dList[listIndex][deppIndex] = '\0';
-			// ...look at next char and next dependant
+			parsedStrings[listIndex][depIndex] = '\0';
 			listIndex++;
-			deppIndex = 0;
-			// while loop ignores multiple consecutive spaces
+			depIndex = 0;
 			while (lineIndex < BUFFER && line[lineIndex] == ' ') {
 				lineIndex++;
 			}
 		}
 	}
-	// stuff once you've found the \0:
-	if (deppIndex != 0) {
-		dList[listIndex][deppIndex] = '\0';
+	// if "\0:" found
+	if (depIndex != 0) {
+		parsedStrings[listIndex][depIndex] = '\0';
 		listIndex++;
 	}
-	free(dList[listIndex]);
-	dList[listIndex] = NULL;
+	free(parsedStrings[listIndex]);
+	parsedStrings[listIndex] = NULL;
 	
-	closeMakeFile(file);
+	lineNum = 0;
+    fclose(file);
 	free(line);
-	return dList;
+	return parsedStrings;
 }
 
 //This method parses the command line of the makefile
@@ -217,14 +208,13 @@ char** parseMakeCommandLine(int* cmdLineNum){
 		}
     }
 
-	// check if viable command line
 	char c = fgetc(file);
 	// quick EOF check
 	if (feof(file)) {
 		return NULL;
 	}
 	if (c != '\t') {
-		// Ignore a line that starts with a newline or #
+		// Skip lines starting with a newline or #
 		if (c == '\n' || c == '#') {
 			(*cmdLineNum)++;
 			return parseMakeCommandLine(cmdLineNum);
@@ -270,10 +260,8 @@ char** parseMakeCommandLine(int* cmdLineNum){
                         // ...set char in array and increment
                         cmdArray[listIndex][arggIndex] = line[lineIndex];
                         arggIndex++;
-                        // ...look at next char
                         lineIndex++;
                 }
-                // if you find a space char...
                 else {
                         // append a null terminator
                         cmdArray[listIndex][arggIndex] = '\0';
@@ -283,7 +271,7 @@ char** parseMakeCommandLine(int* cmdLineNum){
 			lineIndex++;
                 }
         }
-	// append a null pointer after last arg
+	// add a null pointer after last arg
 	if (arggIndex != 0) {
 		cmdArray[listIndex][arggIndex] = '\0';
 		listIndex++;

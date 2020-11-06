@@ -26,7 +26,7 @@ void setFileName(const char* name);
 
 FILE* openMakeFile();
 
-void closeMakeFile(FILE* file);
+void closeMakeFile(FILE* f);
 
 int parseMakeTargets(char* targetString, FILE* file);
 

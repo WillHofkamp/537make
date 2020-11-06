@@ -13,46 +13,42 @@
 int wasexec = 0;
 
 //This method loops through each node and checks if they can be executed
-void checkNodes(GraphNode** order) {
+void checkNodes(GraphNode** flow) {
 	int execute = 1;
 	int i = 0;
-	// printGraph(order);
-	while (order[i] != NULL) {
-		// check if it's a target
-		// if its line number = -1, don't exec
-		if (order[i]->line < 0) {
+	while (flow[i] != NULL) {
+		// check if node is a target
+		if (flow[i]->line < 0) {
 			execute = 0;
 		}
-		// check if it's a file
-		if (access(order[i]->name, F_OK) == 0) {
-			// if so, check if it's up to date
-			if (!modificationCheck(order[i])) {
+		// check if node is a file
+		if (access(flow[i]->name, F_OK) == 0) {
+			if (!modificationCheck(flow[i])) {
 				execute = 0;
 			}
 		}
-		// great! you're good to go!
+		// execute node
 		if (execute) {
-			executeNodeProcess(order[i]);
+			executeNodeProcess(flow[i]);
 		}
 		i++;
 		execute = 1;
 	}
-	if (!wasexec) {
+	if (!executed) {
 		fprintf(stderr, "All files up-to-date\n");
 	}
 
 	return;
 }
 
-void strip_extra_spaces(char* str) {
+//This method removes any unwanted whitespace from the command
+void removeWhitespace(char* str) {
   int i, x;
-  printf("Before %s \n", str);
   for(i=x=0; str[i]; ++i) {
 	  if(!isspace(str[i]) || (i > 0 && !isspace(str[i-1]))) {
 		str[x++] = str[i];
 	}
   }
-  printf("Before %s \n", str);
 }
 
 //This method creates a child proces from the parent process and runs it,
@@ -78,7 +74,7 @@ void executeNodeProcess(GraphNode* node) {
 			int i = 0;
 			while (cmdList[i] != NULL) {
 				if(!isspace(cmdList[i])) {
-					strip_extra_spaces(cmdList[i]);
+					removeWhitespace(cmdList[i]);
 				} else {
 					if(cmdList[i+1] != NULL) {
 						cmdList[i] = cmdList[i+1];
@@ -93,18 +89,18 @@ void executeNodeProcess(GraphNode* node) {
 			wait(&status);
 			if (WEXITSTATUS(status)) {
 				// didn't exit normally
-				fprintf(stderr,"%i: Invalid command \"", *line);
-				int y = 0;
-				while (cmdList[y] != NULL) {
-					fprintf(stderr, "%s ", cmdList[y]);
-					y++;
+				fprintf(stderr,"Invalid command \n");
+				int i = 0;
+				while (cmdList[i] != NULL) {
+					fprintf(stderr, "%s ", cmdList[i]);
+					i++;
 				}
 				fprintf(stderr, "\"\n");
 				exit(0);
 			}
 			else {
 				// manually print command
-				int x = 1;
+				int x = 0;
 				while (cmdList[x] != NULL) {
 					fprintf(stderr, "%s ", cmdList[x]);
 					x++;
@@ -112,8 +108,8 @@ void executeNodeProcess(GraphNode* node) {
 				fprintf(stderr, "\n");
 			}
 		}	
-		//done executing one line
-		wasexec = 1;
+		//line executed
+		executed = 1;
 		(*line)++;
 
 		// free previous command list
@@ -145,16 +141,13 @@ int modificationCheck(GraphNode* node) {
 	time_t t_node = getFileModifiedTime(node->name);
 	time_t t_child;
 
-	// loop thru children
+	// loop throught the children
 	for (int i = 0; i < node->numchild; i++) {
-		//do thing
 		t_child = getFileModifiedTime(node->children[i]->name);
-		// if child was modified MORE SECONDS after the parent,
-		// then parent needs to be recompiled.
+		// recompile parent  if child was modified later than parent
 		if( difftime(t_node, t_child) <= 0 && t_child != 0) {
 			return 1;
 		}
 	}
-	// no need to compile
 	return 0;
 }

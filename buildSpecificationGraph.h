@@ -15,7 +15,7 @@
 #include "buildSpecification.h"
 #include "makeFileParser.h"
 
-int connectNodes(GraphNode** graph);
+int showDependencies(GraphNode** graph);
 
 GraphNode** createOrderedGraph(GraphNode* root, GraphNode** graph);
 

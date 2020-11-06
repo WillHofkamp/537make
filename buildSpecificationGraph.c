@@ -11,8 +11,8 @@
 #include "buildSpecificationGraph.h"
 
 //This method parses the makefile for dependencies, then sets
-//the connection between targets and dependencies
-int connectNodes(GraphNode** graph) {
+//the links between targets and dependencies
+int showDependencies(GraphNode** graph) {
 	GraphNode* currNode;
 	GraphNode* nodeCheck;
 	int graphSize = 0;
@@ -49,8 +49,7 @@ int connectNodes(GraphNode** graph) {
 				// add dependencies
 				addChildToParent(graph[i], nodeCheck);
 			}
-			// otherwise, it's a dependency but not a target
-			// make a node for it, EVEN IF IT'S NOT A FILE
+			//a dependency but not a target
 			else {
 				//create node
 					graph[nextNodeIndex] = createNode(dependencies[j], -1);
@@ -68,7 +67,6 @@ int connectNodes(GraphNode** graph) {
 		free(dependencies);
 
 	}
-
 	return 0;
 }
 
