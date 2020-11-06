@@ -22,11 +22,10 @@ int showDependencies(GraphNode** graph) {
 	while(graph[graphSize] != NULL && graphSize < MAX_NUM_NODES) {
 		graphSize++;
 	}
-	// allows us to add new nodes to the graph
+	
 	int nextNodeIndex = graphSize;
 
-	// loop through nodes to get dependencies
-	// if successful, graph[i] is parent of graph[k]
+	// looping through nodes to get dependencies
 	for (int i = 0; i < graphSize; i++) {
 		if (graph[i] == NULL) {
 			return 0;
@@ -34,7 +33,7 @@ int showDependencies(GraphNode** graph) {
 		currNode = graph[i];
 		dependencies = parseTargetDependencies(currNode->line);
 
-		// Null handling for dependencies
+		
 		if (dependencies == NULL) {
 			return 0;
 		}
@@ -44,9 +43,8 @@ int showDependencies(GraphNode** graph) {
 		while (dependencies[j] != NULL) {
 			// search for a node with that name
 			nodeCheck = findNode(dependencies[j],graph);
-			// if a node is found...
 			if (nodeCheck != NULL) {
-				// add dependencies
+				// form dependencies
 				addChildToParent(graph[i], nodeCheck);
 			}
 			//a dependency but not a target
@@ -58,8 +56,7 @@ int showDependencies(GraphNode** graph) {
 			}
 			j++;
 		}
-
-		// free dependencies before loop
+		
 		for (int f = 0; f < MAX_NUM_NODES; f++) {
 			free(dependencies[f]);
 			dependencies[f] = NULL;
@@ -93,8 +90,8 @@ GraphNode** createOrderedGraph(GraphNode* root, GraphNode** graph) {
 	//do a depth first search on every node and check for initial cycles
 	for(int j = 0; j < graphSize; j++) {
 		if(graph[j] != NULL) {
-			searchDepthFirst(graph[j], NULL);
-			// reset for next searchDepthFirst
+			searchGraph(graph[j], NULL);
+			// reset for next searchGraph
 			for(int k = 0; k < graphSize; k++) {
 				if(graph[k] != NULL) {
 					graph[k]->visited = 0;
@@ -109,14 +106,14 @@ GraphNode** createOrderedGraph(GraphNode* root, GraphNode** graph) {
 	}
 
 	//order the graph
-	searchDepthFirst(root, order);
+	searchGraph(root, order);
 
 	return order;
 }
 
 //This method is the depth first search function which builds the ordered graph
 //and also detects any cycles
-void searchDepthFirst(GraphNode* node, GraphNode** ordered) {
+void searchGraph(GraphNode* node, GraphNode** ordered) {
 	//checks that node hasn't been recurred over yet
 	if (node->recurred == 1) {
 		fprintf(stderr, "%i: Error: loop in dependencies detected at %s\n", node->line, node->name);
@@ -132,7 +129,7 @@ void searchDepthFirst(GraphNode* node, GraphNode** ordered) {
 	//recursively search children
     for (int i = 0; i < node->numchild; i++) {
 		if (node->children[i]->line > 0) {
-			searchDepthFirst(node->children[i], ordered);
+			searchGraph(node->children[i], ordered);
 		}
     }
 	//cycle was not detected in graph, so reset recurred bit

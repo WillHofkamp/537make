@@ -19,6 +19,6 @@ int showDependencies(GraphNode** graph);
 
 GraphNode** createOrderedGraph(GraphNode* root, GraphNode** graph);
 
-void searchDepthFirst(GraphNode* node, GraphNode** ordered);
+void searchGraph(GraphNode* node, GraphNode** ordered);
 
 #endif

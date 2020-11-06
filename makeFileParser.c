@@ -70,7 +70,6 @@ int parseMakeTargets(char* targetString, FILE* file){
 			exit(0);
 		}
 
-		// ignore lines that start with \n, \t, or #
 		//read til you encounter a colon character
 		if (line[0] != '\0' && line[0] != '\t' && line[0] != '#') {	
 			token = strtok_r(line, ":", &rest);
@@ -83,7 +82,6 @@ int parseMakeTargets(char* targetString, FILE* file){
     		} else{
 				strcpy(targetString,token);
 				// remove any extra whitespace
-				// whitespace handling
 				for (int j = 0; j < BUFFER; j++) {
 					if (targetString[j] == ' ') {
 						targetString[j] = '\0';
@@ -106,7 +104,7 @@ char** parseTargetDependencies(int targetLineNum){
 	
 	FILE* file = openMakeFile();
 
-	//throw out lines until you get to lineNum
+	//discard lines until you get to lineNum
 	for(int d = 1; d < targetLineNum; d++){
 		while(fgetc(file) != '\n') {
 			if (feof(file)) {
@@ -127,21 +125,20 @@ char** parseTargetDependencies(int targetLineNum){
 		exit(0);
 	}
 	
-	// EOF check
 	if (feof(file)) {
 		return NULL;
 	}
 
-	char** dependencyList = malloc(sizeof(char*)*MAX_NUM_NODES);	
+	char** dList = malloc(sizeof(char*)*MAX_NUM_NODES);	
 	for (int n = 0; n < MAX_NUM_NODES; n++) {
-		dependencyList[n] = malloc(BUFFER);
+		dList[n] = malloc(BUFFER);
     }
 
 	// index of line read from Makefile
 	int lineIndex = 0;
-	// index of dependant number in dependencyList
+	// index of dependant number in parsedStrings
 	int listIndex = 0;
-	// index of dependant string in dependencyList
+	// index of dependant string in parsedStrings
 	int depIndex = 0;
 
 	// read until ":" is found
@@ -153,24 +150,18 @@ char** parseTargetDependencies(int targetLineNum){
 		lineIndex++;
 	}
 
-	// read char by char until you get to a string terminator
-	// the remainder of the line is a series of
-	// 	- chars making up the dependants
-	// 	- followed by some non-zero number of spaces
-	// 	- all ending in a terminator
+	//read until string terminator is reached
 	while (lineIndex < BUFFER && line[lineIndex] != '\0' && listIndex < MAX_NUM_NODES) {
-		// if you find a non-space, non-terminating char...
+		// if non-space, non-terminating char found
 		if (lineIndex < BUFFER && line[lineIndex] != ' ') {
-			// ...set char in dependencyList and increment
-			dependencyList[listIndex][depIndex] = line[lineIndex];
+			dList[listIndex][depIndex] = line[lineIndex];
 			depIndex++;
-			// ...look at next char
 			lineIndex++;
 		}
 		// if a space char is found
 		else {
 			// append a null terminator
-			dependencyList[listIndex][depIndex] = '\0';
+			parsedStrings[listIndex][depIndex] = '\0';
 			listIndex++;
 			depIndex = 0;
 			while (lineIndex < BUFFER && line[lineIndex] == ' ') {
@@ -180,16 +171,16 @@ char** parseTargetDependencies(int targetLineNum){
 	}
 	// if "\0:" found
 	if (depIndex != 0) {
-		dependencyList[listIndex][depIndex] = '\0';
+		parsedStrings[listIndex][depIndex] = '\0';
 		listIndex++;
 	}
-	free(dependencyList[listIndex]);
-	dependencyList[listIndex] = NULL;
+	free(parsedStrings[listIndex]);
+	parsedStrings[listIndex] = NULL;
 	
 	lineNum = 0;
     fclose(file);
 	free(line);
-	return dependencyList;
+	return parsedStrings;
 }
 
 //This method parses the command line of the makefile
@@ -236,7 +227,7 @@ char** parseMakeCommandLine(int* cmdLineNum){
 		cmdArray[n] = malloc(MAX_CMD_SIZE);
 	}
 
-	// read in line
+	// read line
 	int result = readFileLine(line, file, (int)cmdLineNum);
 	if (result != 0) {
 		return NULL;
@@ -255,9 +246,8 @@ char** parseMakeCommandLine(int* cmdLineNum){
 
 	// read into the array we return
 	while (line[lineIndex] != '\0' && listIndex < MAX_NUM_NODES) {
-                // if you find a non-space char...
+                // if a non-space char found
                 if (line[lineIndex] != ' ') {
-                        // ...set char in array and increment
                         cmdArray[listIndex][arggIndex] = line[lineIndex];
                         arggIndex++;
                         lineIndex++;
@@ -265,7 +255,6 @@ char** parseMakeCommandLine(int* cmdLineNum){
                 else {
                         // append a null terminator
                         cmdArray[listIndex][arggIndex] = '\0';
-                        // ...look at next char and next argument
                         listIndex++;
                         arggIndex = 0;
 			lineIndex++;
@@ -279,7 +268,7 @@ char** parseMakeCommandLine(int* cmdLineNum){
 	free(cmdArray[listIndex]);
 	cmdArray[listIndex] = NULL;
 
-	fclose(file);
+	closeMakeFile(file);
 	return cmdArray;
 }
 
@@ -308,7 +297,7 @@ int readFileLine(char* cmdString, FILE* file, int lineNum) {
         else if (i == BUFFER) {
             return -2;
 		}
-        // no stop condition, read the character!
+        // continue to read the character 
         if (cont) {
 			if (c == '\0') {
 				fprintf(stderr, "%i: Error: the target line has a null character between dependencies \n", lineNum);

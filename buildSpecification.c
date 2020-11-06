@@ -27,7 +27,7 @@ GraphNode* createNode(char *name, int line) {
     node->line = line;
     node->visited = 0;
 	node->recurred = 0;
-    // parent and children are null, but memory is allocated for children
+    // memory is allocated for children
 	node->children = malloc(sizeof(GraphNode*)*MAX_NUM_NODES);
 	node->numchild = 0;
 
@@ -51,7 +51,6 @@ int freeNode(GraphNode* node) {
 
 //This input reads the makefile and turns the targets into nodes
 GraphNode** getNodes() {
-	// Returned array of GraphNodes
 	GraphNode** graph = malloc(sizeof(GraphNode*)*MAX_NUM_NODES);
 	// initialize graph to NULL
 	for (int i = 0; i < MAX_NUM_NODES; i++) {
@@ -60,16 +59,16 @@ GraphNode** getNodes() {
 
 	int nodeIndex = 0;
 	int lineNum = 0;
-	char* targetBuff = calloc(BUFFER, sizeof(char));
+	char* targetBuffer = calloc(BUFFER, sizeof(char));
 	GraphNode* nodeCheck;
 
 	// Pointer to the open file
 	FILE *f = openMakeFile();
-	lineNum = parseMakeTargets(targetBuff, f);
+	lineNum = parseMakeTargets(targetBuffer, f);
 	while (nodeIndex < BUFFER && lineNum > 0) {
 		// parseMakeTargets finds copies the next line with a target
 		// into the buffer and returns the line number
-		nodeCheck = createNode(targetBuff, lineNum);
+		nodeCheck = createNode(targetBuffer, lineNum);
 		// checking for duplicate targets
 		if (findNode(nodeCheck->name, graph) != NULL) {
 			fprintf(stderr, "Error: targets have multiples of name: %s\n", nodeCheck->name);
@@ -85,12 +84,11 @@ GraphNode** getNodes() {
       			maxNodesTracker = maxNodesTracker * multiplier;
      		}
 		}
-		lineNum = parseMakeTargets(targetBuff, f);
+		lineNum = parseMakeTargets(targetBuffer, f);
 	}
 	// Close the file
-	lineNum = 0;
-    fclose(f);
-    free(targetBuff);
+	closeMakeFile(f);
+	free(targetBuffer);
   
     return graph;
 }

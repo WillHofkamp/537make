@@ -13,17 +13,6 @@
 #include "buildSpecificationGraph.h"
 #include "executeSpecificationGraph.h"
 
-//Frees the memory that holds the graph
-//for proper memory usage
-void freeGraphMemory(GraphNode **graph) {
-	int index = 0;
-	while (graph[index] != NULL) {
-		GraphNode *node = graph[index];
-		freeNode(node);
-		index++;
-	}
-	free(graph);
-}
 
 int main(int argc, const char* argv[]) {
 	if(argc == 1) {
@@ -49,10 +38,22 @@ int main(int argc, const char* argv[]) {
 			exit(1);
 		}
 	}
-	showDependencies(graph);
+	connectNodes(graph);
 	GraphNode** order = createOrderedGraph(root, graph);
 	checkNodes(order);
 	freeGraphMemory(graph);
 	free(order);
+}
+
+//Frees the memory that holds the graph
+//for proper memory usage
+void freeGraphMemory(GraphNode **graph) {
+	int index = 0;
+	while (graph[index] != NULL) {
+		GraphNode *node = graph[index];
+		freeNode(node);
+		index++;
+	}
+	free(graph);
 }
 

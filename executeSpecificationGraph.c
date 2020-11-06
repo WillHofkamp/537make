@@ -10,7 +10,7 @@
 
 #include "executeSpecificationGraph.h"
 
-int wasexec = 0;
+int executed = 0;
 
 //This method loops through each node and checks if they can be executed
 void checkNodes(GraphNode** flow) {
@@ -34,7 +34,7 @@ void checkNodes(GraphNode** flow) {
 		i++;
 		execute = 1;
 	}
-	if (!wasexec) {
+	if (!executed) {
 		fprintf(stderr, "All files up-to-date\n");
 	}
 
@@ -70,7 +70,6 @@ void executeNodeProcess(GraphNode* node) {
 			exit(0);
 		}
         else if(pid == 0){
-			// EXECUTE THE LINE
 			int i = 0;
 			while (cmdList[i] != NULL) {
 				if(!isspace(cmdList[i])) {
@@ -99,7 +98,7 @@ void executeNodeProcess(GraphNode* node) {
 				exit(0);
 			}
 			else {
-				// manually print command
+				// print command
 				int x = 0;
 				while (cmdList[x] != NULL) {
 					fprintf(stderr, "%s ", cmdList[x]);
@@ -109,7 +108,7 @@ void executeNodeProcess(GraphNode* node) {
 			}
 		}	
 		//line executed
-		wasexec = 1;
+		executed = 1;
 		(*line)++;
 
 		// free previous command list
