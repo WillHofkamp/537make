@@ -1,6 +1,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Main File: 537make.c
 // This File: buildSpecificationGraph.h
+// This File Description: This is the interface of the class that builds the 
+//                        specification graph
+//
 // Author:           William Hofkamp, Pranet Gowni
 // Email:            hofkamp@wisc.edu, gowni@wisc.edu
 // CS Login:         hofkamp, pranet

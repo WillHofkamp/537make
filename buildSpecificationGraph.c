@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Main File: 537make.c
 // This File: buildSpecificationGraph.c
-// This File Description: This method builds the specification graph
+// This File Description: This class builds the specification graph
 //
 // Author:           William Hofkamp, Pranet Gowni
 // Email:            hofkamp@wisc.edu, gowni@wisc.edu
@@ -19,7 +19,7 @@ int showDependencies(GraphNode** graph) {
 	char** dependencies;
 
 	//find the next available spot to add node 
-	while(graph[graphSize] != NULL && graphSize < MAX_NUM_NODES) {
+	while(graph[graphSize] != NULL && graphSize < MAX_NODE_LIST_SIZE) {
 		graphSize++;
 	}
 	
@@ -41,23 +41,21 @@ int showDependencies(GraphNode** graph) {
 		// loop through dependencies to see if they are nodes
 		int j = 0;
 		while (dependencies[j] != NULL) {
-			// search for a node with that name
 			nodeCheck = findNode(dependencies[j],graph);
 			if (nodeCheck != NULL) {
-				// form dependencies
+				//form dependencies
 				addChildToParent(graph[i], nodeCheck);
 			}
-			//a dependency but not a target
 			else {
 				//create node
-					graph[nextNodeIndex] = createNode(dependencies[j], -1);
-					addChildToParent(graph[i], graph[nextNodeIndex]);
-					nextNodeIndex++;
+				graph[nextNodeIndex] = createNode(dependencies[j], -1);
+				addChildToParent(graph[i], graph[nextNodeIndex]);
+				nextNodeIndex++;
 			}
 			j++;
 		}
 		
-		for (int f = 0; f < MAX_NUM_NODES; f++) {
+		for (int f = 0; f < MAX_NODE_LIST_SIZE; f++) {
 			free(dependencies[f]);
 			dependencies[f] = NULL;
 		}
@@ -76,14 +74,14 @@ GraphNode** createOrderedGraph(GraphNode* root, GraphNode** graph) {
 	}
 
 	//create space for an ordered graph
-	GraphNode** order = malloc(sizeof(GraphNode*)*MAX_NUM_NODES);
-	for (int i = 0; i < MAX_NUM_NODES; i++) {
+	GraphNode** order = malloc(sizeof(GraphNode*)*MAX_NODE_LIST_SIZE);
+	for (int i = 0; i < MAX_NODE_LIST_SIZE; i++) {
 		order[i] = NULL;
 	}
 
 	//find the size of the graph
 	int graphSize = 0;
-	while(graph[graphSize] != NULL && graphSize < MAX_NUM_NODES) {
+	while(graph[graphSize] != NULL && graphSize < MAX_NODE_LIST_SIZE) {
 		graphSize++;
 	}
 
@@ -141,7 +139,7 @@ void searchGraph(GraphNode* node, GraphNode** ordered) {
 	}
 	//otherwise set node in order
 	//find next available spot in ordered graph
-	for(int j = 0; j < MAX_NUM_NODES; j++) {
+	for(int j = 0; j < MAX_NODE_LIST_SIZE; j++) {
 		if(ordered[j] == NULL) {
 			ordered[j] = node;
 			break;

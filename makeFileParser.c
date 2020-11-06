@@ -16,11 +16,12 @@ int lineNum = 0;
 bool foundColon = false;
 char* makeFileName;
 
+//This method is a setter that sets the makefile name
 void setFileName(const char* name) {
 	makeFileName = name;
 } 
 
-//This method opens the makefile
+//This method opens the makefile based off the cmd line arg
 FILE* openMakeFile() {
 	if(strcmp("makefile", makeFileName) == 0) {
 		FILE* file  = fopen("makefile", "r");
@@ -47,11 +48,10 @@ FILE* openMakeFile() {
 //and saves it. The line number of the target is returned.
 int parseMakeTargets(char* targetString, FILE* file){
 	
-	char* token;
-	char* rest = NULL;
-	char line[BUFFER];
+	char* target;
+	char* nullStr = NULL;
+	char currLine[BUFFER];
   
-	
 	if(targetString == NULL){
 		return 0;
 	}	
@@ -61,7 +61,7 @@ int parseMakeTargets(char* targetString, FILE* file){
 
 	while(!feof(file)) {
 		// read in line
-		int result = readFileLine(line, file, lineNum);
+		int result = readFileLine(currLine, file, lineNum);
 		if (result == -1) {
 			return 0;
 		}
@@ -71,16 +71,16 @@ int parseMakeTargets(char* targetString, FILE* file){
 		}
 
 		//read til you encounter a colon character
-		if (line[0] != '\0' && line[0] != '\t' && line[0] != '#') {	
-			token = strtok_r(line, ":", &rest);
-			if (token == NULL){
-				fprintf(stderr, "%i: Error: Target is incorrect \"%s\"\n", lineNum, line);
+		if (currLine[0] != '\0' && currLine[0] != '\t' && currLine[0] != '#') {	
+			target = strtok_r(currLine, ":", &nullStr);
+			if (target == NULL){
+				fprintf(stderr, "%i: Error: Target is incorrect \"%s\"\n", lineNum, currLine);
 				exit(1);
 			} else if (foundColon == false){
-    			fprintf(stderr, "%i: Error: Colon is missing \"%s\"\n",lineNum, line);
+    			fprintf(stderr, "%i: Error: Colon is missing \"%s\"\n", lineNum, currLine);
     			exit(1);
     		} else{
-				strcpy(targetString,token);
+				strcpy(targetString,target);
 				// remove any extra whitespace
 				for (int j = 0; j < BUFFER; j++) {
 					if (targetString[j] == ' ') {
@@ -105,7 +105,7 @@ char** parseTargetDependencies(int targetLineNum){
 	FILE* file = openMakeFile();
 
 	//discard lines until you get to lineNum
-	for(int d = 1; d < targetLineNum; d++){
+	for(int i = 1; i < targetLineNum; i++){
 		while(fgetc(file) != '\n') {
 			if (feof(file)) {
 				return NULL;
@@ -113,15 +113,15 @@ char** parseTargetDependencies(int targetLineNum){
 		}
 	}
 
-	char* line = calloc(BUFFER, sizeof(char));
+	char* currLine = calloc(BUFFER, sizeof(char));
 
 	// read into line
-	int result = readFileLine(line, file, targetLineNum);
+	int result = readFileLine(currLine, file, targetLineNum);
 	if (result != 0) {
 		return NULL;
 	}
 	else if (result == -2) {
-		fprintf(stderr, "%i: Error: Line longer than buffer \"%s\"\n", targetLineNum, line);
+		fprintf(stderr, "%i: Error: Line longer than buffer \"%s\"\n", targetLineNum, currLine);
 		exit(0);
 	}
 	
@@ -129,58 +129,56 @@ char** parseTargetDependencies(int targetLineNum){
 		return NULL;
 	}
 
-	char** dList = malloc(sizeof(char*)*MAX_NUM_NODES);	
-	for (int n = 0; n < MAX_NUM_NODES; n++) {
-		dList[n] = malloc(BUFFER);
+	char** dependencyList = malloc(sizeof(char*)*MAX_NODE_LIST_SIZE);	
+	for (int n = 0; n < MAX_NODE_LIST_SIZE; n++) {
+		dependencyList[n] = malloc(BUFFER);
     }
 
-	// index of line read from Makefile
-	int lineIndex = 0;
-	// index of dependant number in parsedStrings
-	int listIndex = 0;
-	// index of dependant string in parsedStrings
-	int depIndex = 0;
+	int makeFileLineIndex = 0;
+	int dependencyListIndex = 0;
+	int dependencyStringIndex = 0;
 
-	// read until ":" is found
-	while (lineIndex < BUFFER && line[lineIndex] != ':') {
-		lineIndex++;
+	//skip over until : is found
+	while (makeFileLineIndex < BUFFER && currLine[makeFileLineIndex] != ':') {
+		makeFileLineIndex++;
 	}
-	lineIndex++;
-	while (lineIndex < BUFFER && line[lineIndex] == ' ') {
-		lineIndex++;
+	makeFileLineIndex++;
+	//skip over excess whitespace
+	while (makeFileLineIndex < BUFFER && currLine[makeFileLineIndex] == ' ') {
+		makeFileLineIndex++;
 	}
 
 	//read until string terminator is reached
-	while (lineIndex < BUFFER && line[lineIndex] != '\0' && listIndex < MAX_NUM_NODES) {
-		// if non-space, non-terminating char found
-		if (lineIndex < BUFFER && line[lineIndex] != ' ') {
-			dList[listIndex][depIndex] = line[lineIndex];
-			depIndex++;
-			lineIndex++;
+	while (makeFileLineIndex < BUFFER && currLine[makeFileLineIndex] != '\0' && dependencyListIndex < MAX_NODE_LIST_SIZE) {
+		if (makeFileLineIndex < BUFFER && currLine[makeFileLineIndex] != ' ') {
+			//add to dependency list if not space
+			dependencyList[dependencyListIndex][dependencyStringIndex] = currLine[makeFileLineIndex];
+			dependencyStringIndex++;
+			makeFileLineIndex++;
 		}
-		// if a space char is found
 		else {
-			// append a null terminator
-			parsedStrings[listIndex][depIndex] = '\0';
-			listIndex++;
-			depIndex = 0;
-			while (lineIndex < BUFFER && line[lineIndex] == ' ') {
-				lineIndex++;
+			//if there is a space, add dependency to list and start adding new dependency
+			dependencyList[dependencyListIndex][dependencyStringIndex] = '\0';
+			dependencyListIndex++;
+			dependencyStringIndex = 0;
+			while (makeFileLineIndex < BUFFER && currLine[makeFileLineIndex] == ' ') {
+				makeFileLineIndex++;
 			}
 		}
 	}
-	// if "\0:" found
-	if (depIndex != 0) {
-		parsedStrings[listIndex][depIndex] = '\0';
-		listIndex++;
+	//when the null terminator is found above
+	if (dependencyStringIndex != 0) {
+		dependencyList[dependencyListIndex][dependencyStringIndex] = '\0';
+		dependencyListIndex++;
 	}
-	free(parsedStrings[listIndex]);
-	parsedStrings[listIndex] = NULL;
+	free(dependencyList[dependencyListIndex]);
+	dependencyList[dependencyListIndex] = NULL;
 	
+	//free memory
 	lineNum = 0;
     fclose(file);
-	free(line);
-	return parsedStrings;
+	free(currLine);
+	return dependencyList;
 }
 
 //This method parses the command line of the makefile
@@ -188,10 +186,10 @@ char** parseTargetDependencies(int targetLineNum){
 char** parseMakeCommandLine(int* cmdLineNum){
 	
 	FILE* file = openMakeFile();
-	char line[BUFFER];
+	char currLine[BUFFER];
 
     //read each lineNum and throws out the newline
-    for(int d = 1; d < *cmdLineNum; d++){
+    for(int i = 1; i < *cmdLineNum; i++){
         while(fgetc(file) != '\n') {
 			if (feof(file)) {
 				return NULL;
@@ -200,7 +198,6 @@ char** parseMakeCommandLine(int* cmdLineNum){
     }
 
 	char c = fgetc(file);
-	// quick EOF check
 	if (feof(file)) {
 		return NULL;
 	}
@@ -222,53 +219,49 @@ char** parseMakeCommandLine(int* cmdLineNum){
 	}
 
 	//allocate memory for array of commands
-	char** cmdArray = malloc(sizeof(char*)*MAX_CMD_SIZE);
-	for (int n = 0; n < MAX_CMD_SIZE; n++) {
-		cmdArray[n] = malloc(MAX_CMD_SIZE);
+	char** cmdArray = malloc(sizeof(char*)*MAX_COMMAND_LIST_SIZE);
+	for (int j = 0; j < MAX_COMMAND_LIST_SIZE; j++) {
+		cmdArray[j] = malloc(MAX_COMMAND_LIST_SIZE);
 	}
 
-	// read line
-	int result = readFileLine(line, file, (int)cmdLineNum);
+	//read line and check its valid
+	int result = readFileLine(currLine, file, (int)cmdLineNum);
 	if (result != 0) {
 		return NULL;
 	}
 	else if (result == -2) {
-		fprintf(stderr, "%i: Error: Line longer than buffer \"%s\"\n", *cmdLineNum, line);
+		fprintf(stderr, "%i: Error: Line longer than buffer \"%s\"\n", *cmdLineNum, currLine);
 		exit(0);
 	}
 
-	// index of the line from Makefile
-	int lineIndex = 0;
-	// index of the command line argument
-	int listIndex = 0;
-	// index of next character within command line argument
-	int arggIndex = 0;
+	int makeFileLineIndex = 0;
+	int commandListIndex = 0;
+	int commandStringIndex = 0;
 
 	// read into the array we return
-	while (line[lineIndex] != '\0' && listIndex < MAX_NUM_NODES) {
-                // if a non-space char found
-                if (line[lineIndex] != ' ') {
-                        cmdArray[listIndex][arggIndex] = line[lineIndex];
-                        arggIndex++;
-                        lineIndex++;
-                }
-                else {
-                        // append a null terminator
-                        cmdArray[listIndex][arggIndex] = '\0';
-                        listIndex++;
-                        arggIndex = 0;
-			lineIndex++;
-                }
+	while (currLine[makeFileLineIndex] != '\0' && commandListIndex < MAX_NODE_LIST_SIZE) {
+        if (currLine[makeFileLineIndex] != ' ') {
+            cmdArray[commandListIndex][commandStringIndex] = currLine[makeFileLineIndex];
+            commandStringIndex++;
+            makeFileLineIndex++;
         }
+        else {
+            cmdArray[commandListIndex][commandStringIndex] = '\0';
+            commandListIndex++;
+            commandStringIndex = 0;
+			makeFileLineIndex++;
+        }
+    }
 	// add a null pointer after last arg
-	if (arggIndex != 0) {
-		cmdArray[listIndex][arggIndex] = '\0';
-		listIndex++;
+	if (commandStringIndex != 0) {
+		cmdArray[commandListIndex][commandStringIndex] = '\0';
+		commandListIndex++;
 	}
-	free(cmdArray[listIndex]);
-	cmdArray[listIndex] = NULL;
+	free(cmdArray[commandListIndex]);
+	cmdArray[commandListIndex] = NULL;
 
-	closeMakeFile(file);
+	lineNum = 0;
+	fclose(file);
 	return cmdArray;
 }
 
@@ -276,34 +269,34 @@ char** parseMakeCommandLine(int* cmdLineNum){
 //any null characters in the line, not counting the newline terminator
 int readFileLine(char* cmdString, FILE* file, int lineNum) {
 	int i = 0;
-	char c;
-  	int cont = 1;
-    while (cont) {
-        c = fgetc(file);
-        if (c == ':'){
+	char currChar;
+  	int endNotReached = 1;
+    while (endNotReached) {
+        currChar = fgetc(file);
+        if (currChar == ':'){
             foundColon = true;
         }
-        if (c == '\n') {
+        else if (currChar == '\n') {
             cmdString[i] = '\0';
-            cont = 0;
+            endNotReached = 0;
         }
         else if (feof(file)) {
             if (i == 0) {
                 return -1;
             }
             cmdString[i] = '\0';
-            cont = 0;
+            endNotReached = 0;
         }
         else if (i == BUFFER) {
             return -2;
 		}
-        // continue to read the character 
-        if (cont) {
-			if (c == '\0') {
+        if (endNotReached) {
+			//since end was still not reached, add cmd char
+			if (currChar == '\0') {
 				fprintf(stderr, "%i: Error: the target line has a null character between dependencies \n", lineNum);
 				exit(1);
 			} else {
-				cmdString[i] = c;
+				cmdString[i] = currChar;
 			}
         }
        	i++;

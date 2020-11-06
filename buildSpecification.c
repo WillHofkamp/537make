@@ -1,7 +1,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Main File: 537make.c
 // This File: buildSpecification.c
-// This File Description: 
+// This File Description: This file builds the nodes to put in the graph based
+//						  on lines in the makefile
 //
 // Author:           William Hofkamp, Pranet Gowni
 // Email:            hofkamp@wisc.edu, gowni@wisc.edu
@@ -10,8 +11,8 @@
 
 #include "buildSpecification.h"
 
-int multiplier = 100;
-int maxNodesTracker = 64;
+int memoryScale = 100;
+int totalNodesNum = MAX_NODE_LIST_SIZE;
 
 
 //This method creates a new node in the graph
@@ -28,7 +29,7 @@ GraphNode* createNode(char *name, int line) {
     node->visited = 0;
 	node->recurred = 0;
     // memory is allocated for children
-	node->children = malloc(sizeof(GraphNode*)*MAX_NUM_NODES);
+	node->children = malloc(sizeof(GraphNode*)*MAX_NODE_LIST_SIZE);
 	node->numchild = 0;
 
     return node;
@@ -51,44 +52,46 @@ int freeNode(GraphNode* node) {
 
 //This input reads the makefile and turns the targets into nodes
 GraphNode** getNodes() {
-	GraphNode** graph = malloc(sizeof(GraphNode*)*MAX_NUM_NODES);
-	// initialize graph to NULL
-	for (int i = 0; i < MAX_NUM_NODES; i++) {
+	//create graph
+	GraphNode** graph = malloc(sizeof(GraphNode*)*MAX_NODE_LIST_SIZE);
+	for (int i = 0; i < MAX_NODE_LIST_SIZE; i++) {
 		graph[i] = NULL;
 	}
 
-	int nodeIndex = 0;
-	int lineNum = 0;
-	char* targetBuffer = calloc(BUFFER, sizeof(char));
-	GraphNode* nodeCheck;
+	//allocate space for target string and temporary node
+	char* targetString = calloc(BUFFER, sizeof(char));
+	GraphNode* tempNode;
 
-	// Pointer to the open file
 	FILE *f = openMakeFile();
-	lineNum = parseMakeTargets(targetBuffer, f);
-	while (nodeIndex < BUFFER && lineNum > 0) {
-		// parseMakeTargets finds copies the next line with a target
-		// into the buffer and returns the line number
-		nodeCheck = createNode(targetBuffer, lineNum);
-		// checking for duplicate targets
-		if (findNode(nodeCheck->name, graph) != NULL) {
-			fprintf(stderr, "Error: targets have multiples of name: %s\n", nodeCheck->name);
+	int lineNum = parseMakeTargets(targetString, f);
+	int i = 0;
+	while (i < BUFFER && lineNum > 0) {
+		//create a node for this target
+		tempNode = createNode(targetString, lineNum);
+		//duplicate check
+		if (findNode(tempNode->name, graph) != NULL) {
+			fprintf(stderr, "Error: targets have multiples of name: %s\n", tempNode->name);
 			exit(1);
 		}
-		graph[nodeIndex] = nodeCheck;
-		nodeIndex++;
-		if (nodeIndex < BUFFER && nodeIndex == MAX_NUM_NODES ) {
-      		graph = realloc(graph,sizeof(GraphNode*)*(maxNodesTracker * multiplier));
-      		if(maxNodesTracker == 0){
-     			maxNodesTracker = MAX_NUM_NODES * multiplier;
+		//add node to graph
+		graph[i] = tempNode;
+		i++;
+
+		//if max node size is reached, then realloc for more space
+		if (i < BUFFER && i == MAX_NODE_LIST_SIZE ) {
+      		graph = realloc(graph,sizeof(GraphNode*)*(totalNodesNum * memoryScale));
+      		if(totalNodesNum == 0){
+     			totalNodesNum = MAX_NODE_LIST_SIZE * memoryScale;
       		} else {
-      			maxNodesTracker = maxNodesTracker * multiplier;
+      			totalNodesNum = totalNodesNum * memoryScale;
      		}
 		}
-		lineNum = parseMakeTargets(targetBuffer, f);
+		lineNum = parseMakeTargets(targetString, f);
 	}
 	// Close the file
-	closeMakeFile(f);
-	free(targetBuffer);
+	lineNum = 0;
+	fclose(f);
+	free(targetString);
   
     return graph;
 }
@@ -96,50 +99,27 @@ GraphNode** getNodes() {
 //This method finds a node that has a certain name in the graph
 //and returns either a node or null if it doesn't exist
 GraphNode* findNode(char* name, GraphNode** graph) {
-        int index = 0;
-        int cmp;
-        // loop until you reach the max or the end
-        // nodes are filled into the graph
-        while (index < MAX_NUM_NODES && graph[index] != NULL) {
-                cmp = strcmp(name, graph[index]->name);
-                if (cmp == 0) {
-                    return graph[index];
-                }
-                else {
-                    index++;
-                }
+    int i = 0;
+    //iterate until the name is found
+    while (graph[i] != NULL && i < MAX_NODE_LIST_SIZE) {
+        if (strcmp(name, graph[i]->name) == 0) {
+            return graph[i];
         }
-        return NULL;
+        else {
+            i++;
+        }
+    }
+    return NULL;
 
 }
 
 //This method adds a child to a parent's list
 void addChildToParent(GraphNode* parent, GraphNode* child) {
-	// set parent
+	//set parent of child
 	child->parent = parent;
-	// add child to parent's array
+
+	//set child to parent
 	parent->children[parent->numchild] = child;
 	parent->numchild++;
 	return;
 }
-
-//This method prints out the graph
-void printGraph(GraphNode** graph) {
-	int i = 0;
-	while (i < MAX_NUM_NODES && graph[i] != NULL) {
-		fprintf(stderr, "@%i:\t-%s-\n", graph[i]->line, graph[i]->name);
-		if (graph[i]->numchild > 0) {
-			fprintf(stderr, "\t. ");
-		}
-		for (int j = 0; j < graph[i]->numchild; j++) {
-			fprintf(stderr, "%s . ", graph[i]->children[j]->name);
-		}
-		if (graph[i]->numchild > 0) {
-			fprintf(stderr, "\n");
-		}
-		i++;
-	}
-	return;
-}
-
-

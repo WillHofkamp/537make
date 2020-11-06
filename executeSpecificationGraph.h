@@ -25,8 +25,6 @@
 
 void checkNodes(GraphNode** flow);
 
-void removeWhitespace(char* str);
-
 void executeNodeProcess(GraphNode* node);
 
 int modificationCheck(GraphNode* node);

@@ -13,23 +13,22 @@
 int executed = 0;
 
 //This method loops through each node and checks if they can be executed
-void checkNodes(GraphNode** flow) {
+void checkNodes(GraphNode** graph) {
 	int execute = 1;
 	int i = 0;
-	while (flow[i] != NULL) {
+	while (graph[i] != NULL) {
 		// check if node is a target
-		if (flow[i]->line < 0) {
+		if (graph[i]->line < 0) {
 			execute = 0;
 		}
 		// check if node is a file
-		if (access(flow[i]->name, F_OK) == 0) {
-			if (!modificationCheck(flow[i])) {
+		if (access(graph[i]->name, F_OK) == 0) {
+			if (!modificationCheck(graph[i])) {
 				execute = 0;
 			}
 		}
-		// execute node
 		if (execute) {
-			executeNodeProcess(flow[i]);
+			executeNodeProcess(graph[i]);
 		}
 		i++;
 		execute = 1;
@@ -41,27 +40,16 @@ void checkNodes(GraphNode** flow) {
 	return;
 }
 
-//This method removes any unwanted whitespace from the command
-void removeWhitespace(char* str) {
-  int i, x;
-  for(i=x=0; str[i]; ++i) {
-	  if(!isspace(str[i]) || (i > 0 && !isspace(str[i-1]))) {
-		str[x++] = str[i];
-	}
-  }
-}
-
 //This method creates a child proces from the parent process and runs it,
 //then moves on down the graph
 void executeNodeProcess(GraphNode* node) {
-	
-	int* line = &(node->line);
-	(*line)++;
-	char** cmdList;
 	pid_t pid;
 	int status;
-	 
-	cmdList = parseMakeCommandLine(line);
+
+	char** cmdList;
+	int* currLine = &(node->line);
+	(*currLine)++; 
+	cmdList = parseMakeCommandLine(currLine);
 	while(cmdList != NULL){
 		pid = fork();
 
@@ -70,17 +58,6 @@ void executeNodeProcess(GraphNode* node) {
 			exit(0);
 		}
         else if(pid == 0){
-			int i = 0;
-			while (cmdList[i] != NULL) {
-				if(!isspace(cmdList[i])) {
-					removeWhitespace(cmdList[i]);
-				} else {
-					if(cmdList[i+1] != NULL) {
-						cmdList[i] = cmdList[i+1];
-					}
-				}
-				i++;
-			}
 			execvp(cmdList[0], cmdList);
 			exit(EXIT_FAILURE);
 		}
@@ -109,15 +86,15 @@ void executeNodeProcess(GraphNode* node) {
 		}	
 		//line executed
 		executed = 1;
-		(*line)++;
+		(*currLine)++;
 
-		// free previous command list
-		for (int f = 0; f < MAX_CMD_SIZE; f++) {
+		//free memory
+		for (int f = 0; f < MAX_COMMAND_LIST_SIZE; f++) {
 			free(cmdList[f]);
 		}
 		free(cmdList);
 
-		cmdList = parseMakeCommandLine(line);
+		cmdList = parseMakeCommandLine(currLine);
 	}
 
 	return;
@@ -142,7 +119,13 @@ int modificationCheck(GraphNode* node) {
 
 	// loop throught the children
 	for (int i = 0; i < node->numchild; i++) {
-		t_child = getFileModifiedTime(node->children[i]->name);
+		struct stat attr;
+		if (stat(node->children[i]->name, &attr) == 0)
+		{
+			t_child = attr.st_mtime;
+		} else {
+			t_child = 0;
+		}
 		// recompile parent  if child was modified later than parent
 		if( difftime(t_node, t_child) <= 0 && t_child != 0) {
 			return 1;

@@ -13,8 +13,20 @@
 #include "buildSpecificationGraph.h"
 #include "executeSpecificationGraph.h"
 
+//Frees the memory that holds the graph
+//for proper memory usage
+void freeGraphMemory(GraphNode **graph) {
+	int index = 0;
+	while (graph[index] != NULL) {
+		GraphNode *node = graph[index];
+		freeNode(node);
+		index++;
+	}
+	free(graph);
+}
 
 int main(int argc, const char* argv[]) {
+	//decide makefile name to use based on args
 	if(argc == 1) {
 		setFileName("makefile");
 	} else if((argc == 4 || argc == 3) && (strcmp(argv[1], "-f") == 0)) {
@@ -25,7 +37,7 @@ int main(int argc, const char* argv[]) {
 	}
 	GraphNode** graph = getNodes();
 	GraphNode* root;
-	// default, NULL case
+	//decide the root target based on args
 	if (argc == 1 || argc == 3) {
 		root = NULL;
 	}
@@ -38,22 +50,10 @@ int main(int argc, const char* argv[]) {
 			exit(1);
 		}
 	}
-	connectNodes(graph);
+	showDependencies(graph);
 	GraphNode** order = createOrderedGraph(root, graph);
 	checkNodes(order);
 	freeGraphMemory(graph);
 	free(order);
-}
-
-//Frees the memory that holds the graph
-//for proper memory usage
-void freeGraphMemory(GraphNode **graph) {
-	int index = 0;
-	while (graph[index] != NULL) {
-		GraphNode *node = graph[index];
-		freeNode(node);
-		index++;
-	}
-	free(graph);
 }
 
