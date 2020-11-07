@@ -67,25 +67,15 @@ GraphNode** getNodes() {
 	int i = 0;
 	while (i < BUFFER && lineNum > 0) {
 		//create a node for this target
-		tempNode = createNode(targetString, lineNum);
+		tempNode = createNode(targetString, lineNum); 
 		//duplicate check
-		if (findNode(tempNode->name, graph) != NULL) {
+		if (findNode(tempNode->name, graph) != NULL) { 
 			fprintf(stderr, "Error: targets have multiples of name: %s\n", tempNode->name);
 			exit(1);
 		}
 		//add node to graph
 		graph[i] = tempNode;
 		i++;
-
-		//if max node size is reached, then realloc for more space
-		if (i < BUFFER && i == MAX_NODE_LIST_SIZE ) {
-      		graph = realloc(graph,sizeof(GraphNode*)*(totalNodesNum * memoryScale));
-      		if(totalNodesNum == 0){
-     			totalNodesNum = MAX_NODE_LIST_SIZE * memoryScale;
-      		} else {
-      			totalNodesNum = totalNodesNum * memoryScale;
-     		}
-		}
 		lineNum = parseMakeTargets(targetString, f);
 	}
 	// Close the file

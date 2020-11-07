@@ -9,7 +9,6 @@
 // CS Login:         hofkamp, pranet
 ////////////////////////////////////////////////////////////////////////////////
 
-
 #include "makeFileParser.h"
 
 int lineNum = 0;
@@ -66,7 +65,7 @@ int parseMakeTargets(char* targetString, FILE* file){
 			return 0;
 		}
 		else if (result == -2) {
-			fprintf(stderr, "Line longer than buffer\n");
+			fprintf(stderr, "%i: Error: Line longer than buffer \"%s\"\n", lineNum, currLine);
 			exit(0);
 		}
 
@@ -240,16 +239,21 @@ char** parseMakeCommandLine(int* cmdLineNum){
 
 	// read into the array we return
 	while (currLine[makeFileLineIndex] != '\0' && commandListIndex < MAX_NODE_LIST_SIZE) {
-        if (currLine[makeFileLineIndex] != ' ') {
+        if (!isspace(currLine[makeFileLineIndex])) {
             cmdArray[commandListIndex][commandStringIndex] = currLine[makeFileLineIndex];
             commandStringIndex++;
             makeFileLineIndex++;
         }
         else {
-            cmdArray[commandListIndex][commandStringIndex] = '\0';
-            commandListIndex++;
-            commandStringIndex = 0;
-			makeFileLineIndex++;
+			if(makeFileLineIndex > 0 && !isspace(currLine[makeFileLineIndex-1])) {
+				cmdArray[commandListIndex][commandStringIndex] = '\0';
+            	commandListIndex++;
+            	commandStringIndex = 0;
+				makeFileLineIndex++;
+			} else {
+				makeFileLineIndex++;
+			}
+			
         }
     }
 	// add a null pointer after last arg
@@ -276,7 +280,7 @@ int readFileLine(char* cmdString, FILE* file, int lineNum) {
         if (currChar == ':'){
             foundColon = true;
         }
-        else if (currChar == '\n') {
+        if (currChar == '\n') {
             cmdString[i] = '\0';
             endNotReached = 0;
         }

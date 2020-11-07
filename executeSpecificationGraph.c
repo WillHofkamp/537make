@@ -66,22 +66,13 @@ void executeNodeProcess(GraphNode* node) {
 			if (WEXITSTATUS(status)) {
 				// didn't exit normally
 				fprintf(stderr,"Invalid command \n");
-				int i = 0;
-				while (cmdList[i] != NULL) {
-					fprintf(stderr, "%s ", cmdList[i]);
-					i++;
+				int j = 0;
+				while (cmdList[j] != NULL) {
+					fprintf(stderr, "%s ", cmdList[j]);
+					j++;
 				}
 				fprintf(stderr, "\"\n");
 				exit(0);
-			}
-			else {
-				// print command
-				int x = 0;
-				while (cmdList[x] != NULL) {
-					fprintf(stderr, "%s ", cmdList[x]);
-					x++;
-				}
-				fprintf(stderr, "\n");
 			}
 		}	
 		//line executed
@@ -89,8 +80,8 @@ void executeNodeProcess(GraphNode* node) {
 		(*currLine)++;
 
 		//free memory
-		for (int f = 0; f < MAX_COMMAND_LIST_SIZE; f++) {
-			free(cmdList[f]);
+		for (int k = 0; k < MAX_COMMAND_LIST_SIZE; k++) {
+			free(cmdList[k]);
 		}
 		free(cmdList);
 
